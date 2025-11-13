@@ -442,22 +442,6 @@
                 gap: 1rem;
             }
         }
-
-        /* Tambahan untuk info user di header */
-        .user-details {
-            display: flex;
-            flex-direction: column;
-            font-size: 0.8rem;
-        }
-
-        .user-name {
-            font-weight: bold;
-        }
-
-        .user-nim {
-            font-size: 0.7rem;
-            opacity: 0.8;
-        }
     </style>
 </head>
 <body>
@@ -480,10 +464,7 @@
                     <li><a href="#" id="loginLink">Login</a></li>
                     <li class="user-info" id="userInfo">
                         <i class="fas fa-user"></i>
-                        <div class="user-details">
-                            <span class="user-name" id="userName"></span>
-                            <span class="user-nim" id="userNim"></span>
-                        </div>
+                        <span id="userName"></span>
                     </li>
                     <li><a href="#" id="logoutLink" style="display:none;">Logout</a></li>
                 </ul>
@@ -530,7 +511,6 @@
             <div class="admin-controls">
                 <button class="btn" id="addCandidateBtn">Tambah Kandidat</button>
                 <button class="btn btn-secondary" id="viewResultsBtn">Lihat Hasil</button>
-                <button class="btn btn-danger" id="resetVotesBtn">Reset Semua Suara</button>
             </div>
             
             <div class="candidates-list" id="adminCandidatesList">
@@ -549,8 +529,12 @@
             <div class="modal-body">
                 <div id="loginForm">
                     <div class="form-group">
-                        <label for="loginUsername">Username atau Email</label>
-                        <input type="text" id="loginUsername" placeholder="Masukkan username atau email">
+                        <label for="loginUsername">Username</label>
+                        <input type="text" id="loginUsername" placeholder="Masukkan username Anda">
+                    </div>
+                    <div class="form-group">
+                        <label for="loginNim">NIM</label>
+                        <input type="text" id="loginNim" placeholder="Masukkan NIM Anda">
                     </div>
                     <div class="form-group">
                         <label for="loginPassword">Password</label>
@@ -683,13 +667,11 @@
         const voteNowBtn = document.getElementById('voteNowBtn');
         const userInfo = document.getElementById('userInfo');
         const userName = document.getElementById('userName');
-        const userNim = document.getElementById('userNim');
         const adminLink = document.getElementById('adminLink');
         const logoutLink = document.getElementById('logoutLink');
         const adminSection = document.getElementById('adminSection');
         const addCandidateBtn = document.getElementById('addCandidateBtn');
         const viewResultsBtn = document.getElementById('viewResultsBtn');
-        const resetVotesBtn = document.getElementById('resetVotesBtn');
         const candidateModal = document.getElementById('candidateModal');
         const resultsModal = document.getElementById('resultsModal');
         const saveCandidateBtn = document.getElementById('saveCandidateBtn');
@@ -756,7 +738,7 @@
                 });
         }
 
-        // Cek apakah username sudah ada
+        // Check if username already exists
         function checkUsernameExists(username) {
             return db.collection('users').where('username', '==', username).get()
                 .then((querySnapshot) => {
@@ -764,7 +746,7 @@
                 });
         }
 
-        // Cek apakah NIM sudah ada
+        // Check if NIM already exists
         function checkNimExists(nim) {
             return db.collection('users').where('nim', '==', nim).get()
                 .then((querySnapshot) => {
@@ -772,11 +754,21 @@
                 });
         }
 
-        // Cek apakah email sudah ada
-        function checkEmailExists(email) {
-            return db.collection('users').where('email', '==', email).get()
+        // Find user by username and NIM for login
+        function findUserByUsernameAndNim(username, nim) {
+            return db.collection('users')
+                .where('username', '==', username)
+                .where('nim', '==', nim)
+                .get()
                 .then((querySnapshot) => {
-                    return !querySnapshot.empty;
+                    if (!querySnapshot.empty) {
+                        const userDoc = querySnapshot.docs[0];
+                        return {
+                            id: userDoc.id,
+                            data: userDoc.data()
+                        };
+                    }
+                    return null;
                 });
         }
 
@@ -788,8 +780,8 @@
                     voteOptionsContainer.innerHTML = '';
                     
                     if (querySnapshot.empty) {
-                        candidatesContainer.innerHTML = '<p style="text-align: center; width: 100%;">Belum ada kandidat yang terdaftar.</p>';
-                        voteOptionsContainer.innerHTML = '<p style="text-align: center; width: 100%;">Belum ada kandidat yang terdaftar.</p>';
+                        candidatesContainer.innerHTML = '<p>Belum ada kandidat yang terdaftar.</p>';
+                        voteOptionsContainer.innerHTML = '<p>Belum ada kandidat yang terdaftar.</p>';
                         return;
                     }
                     
@@ -806,7 +798,7 @@
                 })
                 .catch((error) => {
                     console.error("Error loading candidates: ", error);
-                    candidatesContainer.innerHTML = '<p style="text-align: center; width: 100%;">Error memuat kandidat.</p>';
+                    candidatesContainer.innerHTML = '<p>Error loading candidates.</p>';
                 });
         }
 
@@ -817,7 +809,7 @@
                     adminCandidatesList.innerHTML = '';
                     
                     if (querySnapshot.empty) {
-                        adminCandidatesList.innerHTML = '<p style="text-align: center; width: 100%;">Belum ada kandidat yang terdaftar.</p>';
+                        adminCandidatesList.innerHTML = '<p>Belum ada kandidat yang terdaftar.</p>';
                         return;
                     }
                     
@@ -831,7 +823,7 @@
                 })
                 .catch((error) => {
                     console.error("Error loading admin candidates: ", error);
-                    adminCandidatesList.innerHTML = '<p style="text-align: center; width: 100%;">Error memuat kandidat.</p>';
+                    adminCandidatesList.innerHTML = '<p>Error loading candidates.</p>';
                 });
         }
 
@@ -919,7 +911,6 @@
             loginLink.style.display = 'none';
             userInfo.style.display = 'flex';
             userName.textContent = user.name;
-            userNim.textContent = `NIM: ${user.nim}`;
             logoutLink.style.display = 'block';
             
             // Show admin link if user is admin
@@ -955,27 +946,6 @@
                     .catch((error) => {
                         console.error("Error deleting candidate: ", error);
                         alert('Terjadi kesalahan saat menghapus kandidat');
-                    });
-            }
-        }
-
-        // Reset semua suara
-        function resetAllVotes() {
-            if (confirm('Apakah Anda yakin ingin menghapus SEMUA suara? Tindakan ini tidak dapat dibatalkan!')) {
-                db.collection('votes').get()
-                    .then((querySnapshot) => {
-                        const batch = db.batch();
-                        querySnapshot.forEach((doc) => {
-                            batch.delete(doc.ref);
-                        });
-                        return batch.commit();
-                    })
-                    .then(() => {
-                        alert('Semua suara berhasil dihapus!');
-                    })
-                    .catch((error) => {
-                        console.error("Error resetting votes: ", error);
-                        alert('Terjadi kesalahan saat menghapus suara');
                     });
             }
         }
@@ -1110,10 +1080,6 @@
             showResults();
         });
 
-        resetVotesBtn.addEventListener('click', () => {
-            resetAllVotes();
-        });
-
         saveCandidateBtn.addEventListener('click', () => {
             const name = document.getElementById('candidateName').value;
             const program = document.getElementById('candidateProgram').value;
@@ -1194,8 +1160,6 @@
                     return db.collection('votes').add({
                         candidate: selectedCandidate,
                         userId: user.uid,
-                        userName: userName.textContent,
-                        userNim: userNim.textContent.replace('NIM: ', ''),
                         timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 })
@@ -1260,11 +1224,12 @@
         // Login functionality dengan Firebase Auth
         loginBtn.addEventListener('click', () => {
             const username = document.getElementById('loginUsername').value;
+            const nim = document.getElementById('loginNim').value;
             const password = document.getElementById('loginPassword').value;
             const adminCode = document.getElementById('adminCode').value;
             
-            if (!username || !password) {
-                alert('Silakan isi username/email dan password!');
+            if (!username || !nim || !password) {
+                alert('Silakan isi username, NIM dan password!');
                 return;
             }
             
@@ -1276,34 +1241,23 @@
                 }
             }
             
-            // Coba login dengan email atau username
-            let loginPromise;
-            
-            // Cek apakah input adalah email
-            if (username.includes('@')) {
-                loginPromise = auth.signInWithEmailAndPassword(username, password);
-            } else {
-                // Jika bukan email, cari user dengan username tersebut
-                loginPromise = db.collection('users')
-                    .where('username', '==', username)
-                    .get()
-                    .then((querySnapshot) => {
-                        if (querySnapshot.empty) {
-                            throw new Error('Username tidak ditemukan');
-                        }
-                        const userDoc = querySnapshot.docs[0];
-                        const userData = userDoc.data();
-                        return auth.signInWithEmailAndPassword(userData.email, password);
-                    });
-            }
-            
-            loginPromise
-                .then((userCredential) => {
-                    // Signed in
-                    const user = userCredential.user;
+            // Find user by username and NIM
+            findUserByUsernameAndNim(username, nim)
+                .then((userData) => {
+                    if (!userData) {
+                        alert('Username atau NIM salah!');
+                        return;
+                    }
                     
-                    // Get user data from Firestore
-                    return getUserData(user.uid);
+                    // Get email from user data and login with email/password
+                    const email = userData.data.email;
+                    
+                    return auth.signInWithEmailAndPassword(email, password)
+                        .then((userCredential) => {
+                            // Signed in
+                            const user = userCredential.user;
+                            return userData.data;
+                        });
                 })
                 .then((userData) => {
                     if (userData) {
@@ -1315,18 +1269,20 @@
                         
                         // Reset form
                         document.getElementById('loginUsername').value = '';
+                        document.getElementById('loginNim').value = '';
                         document.getElementById('loginPassword').value = '';
                         document.getElementById('adminCode').value = '';
                         isAdminLogin = false;
                         adminCodeGroup.style.display = 'none';
-                    } else {
-                        alert('Data pengguna tidak ditemukan!');
-                        auth.signOut();
                     }
                 })
                 .catch((error) => {
                     console.error('Error signing in:', error);
-                    alert('Login gagal: ' + error.message);
+                    if (error.code === 'auth/wrong-password') {
+                        alert('Password salah!');
+                    } else {
+                        alert('Login gagal: ' + error.message);
+                    }
                 });
         });
 
@@ -1344,8 +1300,8 @@
             }
             
             // Validate NIM format
-            if (!/^\d{10,}$/.test(nim)) {
-                alert('NIM harus terdiri dari angka (minimal 10 digit)!');
+            if (!/^\d{10,15}$/.test(nim)) {
+                alert('NIM harus terdiri dari 10-15 digit angka!');
                 return;
             }
             
@@ -1359,64 +1315,68 @@
                 return;
             }
             
-            // Check if username, nim, or email already exists
-            Promise.all([
-                checkUsernameExists(username),
-                checkNimExists(nim),
-                checkEmailExists(email)
-            ]).then(([usernameExists, nimExists, emailExists]) => {
-                if (usernameExists) {
-                    alert('Username sudah digunakan! Silakan pilih username lain.');
-                    return;
-                }
-                
-                if (nimExists) {
-                    alert('NIM sudah terdaftar!');
-                    return;
-                }
-                
-                if (emailExists) {
-                    alert('Email sudah terdaftar!');
-                    return;
-                }
-                
-                // Create user with Firebase Auth
-                return auth.createUserWithEmailAndPassword(email, password);
-            })
-            .then((userCredential) => {
-                // Signed up successfully
-                const user = userCredential.user;
-                
-                // Save additional user data to Firestore
-                return db.collection('users').doc(user.uid).set({
-                    name: name,
-                    username: username,
-                    nim: nim,
-                    email: email,
-                    isAdmin: false,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            // Check if username already exists
+            checkUsernameExists(username)
+                .then((usernameExists) => {
+                    if (usernameExists) {
+                        alert('Username sudah digunakan! Silakan pilih username lain.');
+                        return Promise.reject(new Error('Username exists'));
+                    }
+                    
+                    // Check if NIM already exists
+                    return checkNimExists(nim);
+                })
+                .then((nimExists) => {
+                    if (nimExists) {
+                        alert('NIM sudah terdaftar!');
+                        return Promise.reject(new Error('NIM exists'));
+                    }
+                    
+                    // Create user with Firebase Auth
+                    return auth.createUserWithEmailAndPassword(email, password);
+                })
+                .then((userCredential) => {
+                    // Signed up successfully
+                    const user = userCredential.user;
+                    
+                    // Save additional user data to Firestore
+                    return db.collection('users').doc(user.uid).set({
+                        name: name,
+                        username: username,
+                        nim: nim,
+                        email: email,
+                        isAdmin: false,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                })
+                .then(() => {
+                    alert('Pendaftaran berhasil! Anda sekarang dapat login.');
+                    // Switch back to login form
+                    loginForm.style.display = 'block';
+                    registerForm.style.display = 'none';
+                    loginModalTitle.textContent = 'Login Pemilihan';
+                    loginFooterText.innerHTML = 'Belum punya akun? <a href="#" id="registerLink">Daftar di sini</a>';
+                    backToLoginLink.style.display = 'none';
+                    
+                    // Reset form
+                    document.getElementById('regName').value = '';
+                    document.getElementById('regUsername').value = '';
+                    document.getElementById('regNim').value = '';
+                    document.getElementById('regEmail').value = '';
+                    document.getElementById('regPassword').value = '';
+                })
+                .catch((error) => {
+                    if (error.message === 'Username exists' || error.message === 'NIM exists') {
+                        // Error already handled
+                        return;
+                    }
+                    console.error('Error signing up:', error);
+                    if (error.code === 'auth/email-already-in-use') {
+                        alert('Email sudah digunakan!');
+                    } else {
+                        alert('Pendaftaran gagal: ' + error.message);
+                    }
                 });
-            })
-            .then(() => {
-                alert('Pendaftaran berhasil! Anda sekarang dapat login.');
-                // Switch back to login form
-                loginForm.style.display = 'block';
-                registerForm.style.display = 'none';
-                loginModalTitle.textContent = 'Login Pemilihan';
-                loginFooterText.innerHTML = 'Belum punya akun? <a href="#" id="registerLink">Daftar di sini</a>';
-                backToLoginLink.style.display = 'none';
-                
-                // Reset form
-                document.getElementById('regName').value = '';
-                document.getElementById('regUsername').value = '';
-                document.getElementById('regNim').value = '';
-                document.getElementById('regEmail').value = '';
-                document.getElementById('regPassword').value = '';
-            })
-            .catch((error) => {
-                console.error('Error signing up:', error);
-                alert('Pendaftaran gagal: ' + error.message);
-            });
         });
 
         // Navigation
