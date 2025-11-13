@@ -523,35 +523,50 @@
     <div class="modal" id="loginModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Login Pemilihan</h2>
+                <h2 id="loginModalTitle">Login Pemilihan</h2>
                 <span class="close">&times;</span>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label for="name">Nama Lengkap</label>
-                    <input type="text" id="name" placeholder="Masukkan nama lengkap Anda">
+                <div id="loginForm">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" placeholder="Masukkan email Anda">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" placeholder="Masukkan password Anda">
+                    </div>
+                    <div class="form-group" id="adminCodeGroup" style="display:none;">
+                        <label for="adminCode">Kode Admin</label>
+                        <input type="password" id="adminCode" placeholder="Masukkan kode admin">
+                    </div>
+                    <button class="btn" id="loginBtn" style="width: 100%;">Login</button>
                 </div>
-                <div class="form-group">
-                    <label for="nim">NIM</label>
-                    <input type="text" id="nim" placeholder="Masukkan NIM Anda">
+                
+                <div id="registerForm" style="display:none;">
+                    <div class="form-group">
+                        <label for="regName">Nama Lengkap</label>
+                        <input type="text" id="regName" placeholder="Masukkan nama lengkap Anda">
+                    </div>
+                    <div class="form-group">
+                        <label for="regNim">NIM</label>
+                        <input type="text" id="regNim" placeholder="Masukkan NIM Anda">
+                    </div>
+                    <div class="form-group">
+                        <label for="regEmail">Email</label>
+                        <input type="email" id="regEmail" placeholder="Masukkan email Anda">
+                    </div>
+                    <div class="form-group">
+                        <label for="regPassword">Password</label>
+                        <input type="password" id="regPassword" placeholder="Masukkan password (min. 6 karakter)">
+                    </div>
+                    <button class="btn" id="registerBtn" style="width: 100%;">Daftar</button>
                 </div>
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" placeholder="Masukkan email Anda">
-                </div>
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" placeholder="Masukkan password Anda">
-                </div>
-                <div class="form-group" id="adminCodeGroup" style="display:none;">
-                    <label for="adminCode">Kode Admin</label>
-                    <input type="password" id="adminCode" placeholder="Masukkan kode admin">
-                </div>
-                <button class="btn" id="loginBtn" style="width: 100%;">Login</button>
             </div>
             <div class="modal-footer">
-                <p>Belum punya akun? <a href="#" id="registerLink">Daftar di sini</a></p>
+                <p id="loginFooterText">Belum punya akun? <a href="#" id="registerLink">Daftar di sini</a></p>
                 <p><a href="#" id="adminLoginLink">Login sebagai Admin</a></p>
+                <p id="backToLoginLink" style="display:none;"><a href="#">Kembali ke Login</a></p>
             </div>
         </div>
     </div>
@@ -638,6 +653,7 @@
         const loginLink = document.getElementById('loginLink');
         const closeModal = document.querySelectorAll('.close');
         const loginBtn = document.getElementById('loginBtn');
+        const registerBtn = document.getElementById('registerBtn');
         const registerLink = document.getElementById('registerLink');
         const submitVoteBtn = document.getElementById('submitVote');
         const voteNowBtn = document.getElementById('voteNowBtn');
@@ -653,6 +669,11 @@
         const saveCandidateBtn = document.getElementById('saveCandidateBtn');
         const adminLoginLink = document.getElementById('adminLoginLink');
         const adminCodeGroup = document.getElementById('adminCodeGroup');
+        const backToLoginLink = document.getElementById('backToLoginLink');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const loginModalTitle = document.getElementById('loginModalTitle');
+        const loginFooterText = document.getElementById('loginFooterText');
         
         const candidatesContainer = document.getElementById('candidatesContainer');
         const voteOptionsContainer = document.getElementById('voteOptionsContainer');
@@ -668,19 +689,43 @@
 
         // Check if user is already logged in
         function checkAuthState() {
-            const userData = localStorage.getItem('userData');
-            if (userData) {
-                const user = JSON.parse(userData);
-                updateUIForLoggedInUser(user);
-                // Set isAdmin berdasarkan data user
-                isAdmin = user.isAdmin || false;
-                
-                // Jika admin, load candidates untuk admin juga
-                if (isAdmin) {
-                    loadAdminCandidates();
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    // User is signed in
+                    getUserData(user.uid).then(userData => {
+                        updateUIForLoggedInUser(userData);
+                        // Set isAdmin berdasarkan data user
+                        isAdmin = userData.isAdmin || false;
+                        
+                        // Jika admin, load candidates untuk admin juga
+                        if (isAdmin) {
+                            loadAdminCandidates();
+                        }
+                    });
+                } else {
+                    // User is signed out
+                    console.log('User is signed out');
                 }
-            }
+            });
+            
             loadCandidates();
+        }
+
+        // Get user data from Firestore
+        function getUserData(uid) {
+            return db.collection('users').doc(uid).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        return doc.data();
+                    } else {
+                        console.log("No such document!");
+                        return null;
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error getting user data:", error);
+                    return null;
+                });
         }
 
         // Load candidates from Firestore untuk public view
@@ -910,6 +955,11 @@
         loginLink.addEventListener('click', () => {
             isAdminLogin = false;
             adminCodeGroup.style.display = 'none';
+            loginForm.style.display = 'block';
+            registerForm.style.display = 'none';
+            loginModalTitle.textContent = 'Login Pemilihan';
+            loginFooterText.innerHTML = 'Belum punya akun? <a href="#" id="registerLink">Daftar di sini</a>';
+            backToLoginLink.style.display = 'none';
             loginModal.style.display = 'flex';
         });
 
@@ -939,6 +989,24 @@
             e.preventDefault();
             isAdminLogin = true;
             adminCodeGroup.style.display = 'block';
+        });
+
+        registerLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginForm.style.display = 'none';
+            registerForm.style.display = 'block';
+            loginModalTitle.textContent = 'Daftar Akun Baru';
+            loginFooterText.innerHTML = 'Sudah punya akun? <a href="#" id="loginLink">Login di sini</a>';
+            backToLoginLink.style.display = 'block';
+        });
+
+        backToLoginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginForm.style.display = 'block';
+            registerForm.style.display = 'none';
+            loginModalTitle.textContent = 'Login Pemilihan';
+            loginFooterText.innerHTML = 'Belum punya akun? <a href="#" id="registerLink">Daftar di sini</a>';
+            backToLoginLink.style.display = 'none';
         });
 
         addCandidateBtn.addEventListener('click', () => {
@@ -1016,41 +1084,38 @@
                 return;
             }
             
-            const userData = localStorage.getItem('userData');
-            if (!userData) {
+            const user = auth.currentUser;
+            if (!user) {
                 alert('Anda harus login terlebih dahulu untuk melakukan voting!');
                 loginModal.style.display = 'flex';
                 return;
             }
             
-            const user = JSON.parse(userData);
-            
             // Check if user has already voted
-            const hasVoted = localStorage.getItem(`voted_${user.nim}`);
-            if (hasVoted) {
-                alert('Anda sudah melakukan voting sebelumnya!');
-                return;
-            }
-            
-            // Save vote to Firestore
-            db.collection('votes').add({
-                candidate: selectedCandidate,
-                userId: user.nim,
-                userName: user.name,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            })
-            .then(() => {
-                // Mark user as voted
-                localStorage.setItem(`voted_${user.nim}`, 'true');
-                alert('Terima kasih! Suara Anda telah tercatat.');
-                // Reset selection
-                document.querySelectorAll('.vote-option').forEach(opt => opt.classList.remove('selected'));
-                selectedCandidate = null;
-            })
-            .catch(error => {
-                console.error('Error saving vote: ', error);
-                alert('Terjadi kesalahan. Silakan coba lagi.');
-            });
+            db.collection('votes').where('userId', '==', user.uid).get()
+                .then((querySnapshot) => {
+                    if (!querySnapshot.empty) {
+                        alert('Anda sudah melakukan voting sebelumnya!');
+                        return;
+                    }
+                    
+                    // Save vote to Firestore
+                    return db.collection('votes').add({
+                        candidate: selectedCandidate,
+                        userId: user.uid,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                })
+                .then(() => {
+                    alert('Terima kasih! Suara Anda telah tercatat.');
+                    // Reset selection
+                    document.querySelectorAll('.vote-option').forEach(opt => opt.classList.remove('selected'));
+                    selectedCandidate = null;
+                })
+                .catch(error => {
+                    console.error('Error saving vote: ', error);
+                    alert('Terjadi kesalahan. Silakan coba lagi.');
+                });
         });
 
         voteNowBtn.addEventListener('click', (e) => {
@@ -1079,36 +1144,34 @@
 
         logoutLink.addEventListener('click', (e) => {
             e.preventDefault();
-            localStorage.removeItem('userData');
-            loginLink.style.display = 'block';
-            userInfo.style.display = 'none';
-            logoutLink.style.display = 'none';
-            adminLink.style.display = 'none';
-            adminSection.style.display = 'none';
-            isAdmin = false;
-            
-            // Show hidden sections
-            document.querySelector('.hero').style.display = 'block';
-            document.querySelector('.candidates').style.display = 'grid';
-            document.querySelector('.vote-section').style.display = 'block';
+            auth.signOut().then(() => {
+                // Sign-out successful.
+                loginLink.style.display = 'block';
+                userInfo.style.display = 'none';
+                logoutLink.style.display = 'none';
+                adminLink.style.display = 'none';
+                adminSection.style.display = 'none';
+                isAdmin = false;
+                
+                // Show hidden sections
+                document.querySelector('.hero').style.display = 'block';
+                document.querySelector('.candidates').style.display = 'grid';
+                document.querySelector('.vote-section').style.display = 'block';
+                
+                alert('Logout berhasil!');
+            }).catch((error) => {
+                console.error('Error signing out:', error);
+            });
         });
 
-        // Login functionality
+        // Login functionality dengan Firebase Auth
         loginBtn.addEventListener('click', () => {
-            const name = document.getElementById('name').value;
-            const nim = document.getElementById('nim').value;
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const adminCode = document.getElementById('adminCode').value;
             
-            if (!name || !nim || !email || !password) {
-                alert('Silakan isi semua data!');
-                return;
-            }
-            
-            // Validate NIM format (example: 10 digits)
-            if (!/^\d{10}$/.test(nim)) {
-                alert('NIM harus terdiri dari 10 digit angka!');
+            if (!email || !password) {
+                alert('Silakan isi email dan password!');
                 return;
             }
             
@@ -1120,41 +1183,45 @@
                 }
             }
             
-            // For demo purposes, we'll use localStorage instead of Firebase auth
-            const userData = {
-                name: name,
-                nim: nim,
-                email: email,
-                isAdmin: isAdminLogin
-            };
-            
-            // Save user data to localStorage
-            localStorage.setItem('userData', JSON.stringify(userData));
-            
-            // Update UI dan state
-            updateUIForLoggedInUser(userData);
-            isAdmin = isAdminLogin;
-            
-            alert('Login berhasil!' + (isAdmin ? ' Anda login sebagai admin.' : ''));
-            loginModal.style.display = 'none';
-            
-            // Reset form
-            document.getElementById('name').value = '';
-            document.getElementById('nim').value = '';
-            document.getElementById('email').value = '';
-            document.getElementById('password').value = '';
-            document.getElementById('adminCode').value = '';
-            isAdminLogin = false;
-            adminCodeGroup.style.display = 'none';
+            auth.signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Signed in
+                    const user = userCredential.user;
+                    
+                    // Get user data from Firestore
+                    return getUserData(user.uid);
+                })
+                .then((userData) => {
+                    if (userData) {
+                        updateUIForLoggedInUser(userData);
+                        isAdmin = isAdminLogin;
+                        
+                        alert('Login berhasil!' + (isAdmin ? ' Anda login sebagai admin.' : ''));
+                        loginModal.style.display = 'none';
+                        
+                        // Reset form
+                        document.getElementById('email').value = '';
+                        document.getElementById('password').value = '';
+                        document.getElementById('adminCode').value = '';
+                        isAdminLogin = false;
+                        adminCodeGroup.style.display = 'none';
+                    } else {
+                        alert('Data pengguna tidak ditemukan!');
+                        auth.signOut();
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error signing in:', error);
+                    alert('Login gagal: ' + error.message);
+                });
         });
 
-        // Register functionality
-        registerLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            const name = document.getElementById('name').value;
-            const nim = document.getElementById('nim').value;
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+        // Register functionality dengan Firebase Auth
+        registerBtn.addEventListener('click', () => {
+            const name = document.getElementById('regName').value;
+            const nim = document.getElementById('regNim').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
             
             if (!name || !nim || !email || !password) {
                 alert('Silakan isi semua data untuk pendaftaran!');
@@ -1167,28 +1234,45 @@
                 return;
             }
             
-            // For demo purposes, we'll use localStorage instead of Firebase auth
-            const userData = {
-                name: name,
-                nim: nim,
-                email: email,
-                isAdmin: false
-            };
+            if (password.length < 6) {
+                alert('Password harus minimal 6 karakter!');
+                return;
+            }
             
-            // Save user data to localStorage
-            localStorage.setItem('userData', JSON.stringify(userData));
-            
-            // Update UI
-            updateUIForLoggedInUser(userData);
-            
-            alert('Pendaftaran berhasil! Anda sekarang dapat login.');
-            loginModal.style.display = 'none';
-            
-            // Reset form
-            document.getElementById('name').value = '';
-            document.getElementById('nim').value = '';
-            document.getElementById('email').value = '';
-            document.getElementById('password').value = '';
+            // Create user with Firebase Auth
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Signed up successfully
+                    const user = userCredential.user;
+                    
+                    // Save additional user data to Firestore
+                    return db.collection('users').doc(user.uid).set({
+                        name: name,
+                        nim: nim,
+                        email: email,
+                        isAdmin: false,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                })
+                .then(() => {
+                    alert('Pendaftaran berhasil! Anda sekarang dapat login.');
+                    // Switch back to login form
+                    loginForm.style.display = 'block';
+                    registerForm.style.display = 'none';
+                    loginModalTitle.textContent = 'Login Pemilihan';
+                    loginFooterText.innerHTML = 'Belum punya akun? <a href="#" id="registerLink">Daftar di sini</a>';
+                    backToLoginLink.style.display = 'none';
+                    
+                    // Reset form
+                    document.getElementById('regName').value = '';
+                    document.getElementById('regNim').value = '';
+                    document.getElementById('regEmail').value = '';
+                    document.getElementById('regPassword').value = '';
+                })
+                .catch((error) => {
+                    console.error('Error signing up:', error);
+                    alert('Pendaftaran gagal: ' + error.message);
+                });
         });
 
         // Navigation
