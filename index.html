@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pemilihan Ketua IMM</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --maroon: #800000;
+            --light-maroon: #a52a2a;
+            --dark-maroon: #5a0000;
+            --cream: #f5f5dc;
+            --gold: #daa520;
+        }
+
+        body {
+            background-color: var(--cream);
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header Styles */
+        header {
+            background: linear-gradient(to right, var(--dark-maroon), var(--maroon));
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo i {
+            font-size: 2.5rem;
+            margin-right: 10px;
+            color: var(--gold);
+        }
+
+        .logo h1 {
+            font-size: 1.8rem;
+        }
+
+        .logo span {
+            font-size: 1rem;
+            display: block;
+            font-weight: normal;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+
+        nav ul li {
+            margin-left: 20px;
+        }
+
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+
+        nav ul li a:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(rgba(128, 0, 0, 0.8), rgba(128, 0, 0, 0.9)), url('https://images.unsplash.com/photo-1523580494863-6f3031224c94?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            text-align: center;
+            padding: 5rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .hero h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin: 0 auto 2rem;
+        }
+
+        .btn {
+            display: inline-block;
+            background: var(--gold);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #b8860b;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-secondary {
+            background: var(--light-maroon);
+        }
+
+        .btn-secondary:hover {
+            background: var(--dark-maroon);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        /* Candidates Section */
+        .section-title {
+            text-align: center;
+            margin: 3rem 0 2rem;
+            color: var(--maroon);
+            position: relative;
+        }
+
+        .section-title:after {
+            content: '';
+            display: block;
+            width: 100px;
+            height: 3px;
+            background: var(--maroon);
+            margin: 10px auto;
+        }
+
+        .candidates {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .candidate-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+
+        .candidate-card:hover {
+            transform: translateY(-10px);
+        }
+
+        .candidate-img {
+            height: 250px;
+            background-color: var(--light-maroon);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 5rem;
+        }
+
+        .candidate-info {
+            padding: 1.5rem;
+        }
+
+        .candidate-info h3 {
+            color: var(--maroon);
+            margin-bottom: 0.5rem;
+        }
+
+        .candidate-info p {
+            margin-bottom: 1rem;
+            color: #666;
+        }
+
+        /* Vote Section */
+        .vote-section {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 3rem;
+        }
+
+        .vote-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .vote-option {
+            flex: 1;
+            min-width: 200px;
+            text-align: center;
+            padding: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .vote-option:hover {
+            border-color: var(--maroon);
+        }
+
+        .vote-option.selected {
+            border-color: var(--maroon);
+            background: rgba(128, 0, 0, 0.05);
+        }
+
+        .vote-option i {
+            font-size: 2rem;
+            color: var(--maroon);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Login Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            background: var(--maroon);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--maroon);
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .modal-footer {
+            padding: 1rem 2rem;
+            background: #f9f9f9;
+            text-align: center;
+            border-top: 1px solid #eee;
+        }
+
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: white;
+        }
+
+        /* User Info */
+        .user-info {
+            display: none;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            margin-left: 20px;
+        }
+
+        .user-info i {
+            margin-right: 8px;
+        }
+
+        /* Admin Dashboard */
+        .admin-section {
+            display: none;
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 3rem;
+        }
+
+        .admin-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+        }
+
+        .candidates-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .admin-candidate-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            border: 1px solid #eee;
+        }
+
+        .admin-candidate-actions {
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px solid #eee;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--dark-maroon);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+        }
+
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .footer-logo {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: var(--gold);
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 2rem;
+            margin: 1rem 0;
+        }
+
+        .footer-links a {
+            color: white;
+            text-decoration: none;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            nav ul {
+                margin-top: 1rem;
+                justify-content: center;
+            }
+
+            nav ul li {
+                margin: 0 10px;
+            }
+
+            .hero h2 {
+                font-size: 2rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            .admin-controls {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container header-content">
+            <div class="logo">
+                <i class="fas fa-vote-yea"></i>
+                <div>
+                    <h1>Pemilihan Ketua IMM</h1>
+                    <span>Ikatan Mahasiswa Muhammadiyah</span>
+                </div>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#" id="homeLink">Beranda</a></li>
+                    <li><a href="#" id="candidatesLink">Kandidat</a></li>
+                    <li><a href="#" id="voteLink">Voting</a></li>
+                    <li><a href="#" id="adminLink" style="display:none;">Admin</a></li>
+                    <li><a href="#" id="loginLink">Login</a></li>
+                    <li class="user-info" id="userInfo">
+                        <i class="fas fa-user"></i>
+                        <span id="userName"></span>
+                    </li>
+                    <li><a href="#" id="logoutLink" style="display:none;">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h2>Pemilihan Ketua IMM Periode 2025-2026</h2>
+            <p>Ikut berpartisipasi dalam menentukan masa depan organisasi dengan memilih calon ketua IMM yang terbaik.</p>
+            <a href="#" class="btn" id="voteNowBtn">Voting Sekarang</a>
+        </div>
+    </section>
+
+    <!-- Candidates Section -->
+    <section class="container">
+        <h2 class="section-title">Calon Kandidat Ketua IMM</h2>
+        <div class="candidates" id="candidatesContainer">
+            <!-- Kandidat akan dimuat secara dinamis -->
+        </div>
+    </section>
+
+    <!-- Vote Section -->
+    <section class="container">
+        <h2 class="section-title">Pilih Calon Ketua IMM</h2>
+        <div class="vote-section">
+            <p>Silakan pilih salah satu calon ketua IMM di bawah ini. Pastikan pilihan Anda sudah tepat sebelum mengirimkan suara.</p>
+            
+            <div class="vote-options" id="voteOptionsContainer">
+                <!-- Opsi voting akan dimuat secara dinamis -->
+            </div>
+            
+            <button class="btn" id="submitVote" style="width: 100%;">Kirim Suara Saya</button>
+        </div>
+    </section>
+
+    <!-- Admin Dashboard -->
+    <section class="container">
+        <div class="admin-section" id="adminSection">
+            <h2 class="section-title">Dashboard Admin</h2>
+            
+            <div class="admin-controls">
+                <button class="btn" id="addCandidateBtn">Tambah Kandidat</button>
+                <button class="btn btn-secondary" id="viewResultsBtn">Lihat Hasil</button>
+            </div>
+            
+            <div class="candidates-list" id="adminCandidatesList">
+                <!-- Daftar kandidat untuk admin akan dimuat di sini -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Login Modal -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Login Pemilihan</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="name">Nama Lengkap</label>
+                    <input type="text" id="name" placeholder="Masukkan nama lengkap Anda">
+                </div>
+                <div class="form-group">
+                    <label for="nim">NIM</label>
+                    <input type="text" id="nim" placeholder="Masukkan NIM Anda">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" placeholder="Masukkan email Anda">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Masukkan password Anda">
+                </div>
+                <div class="form-group" id="adminCodeGroup" style="display:none;">
+                    <label for="adminCode">Kode Admin</label>
+                    <input type="password" id="adminCode" placeholder="Masukkan kode admin">
+                </div>
+                <button class="btn" id="loginBtn" style="width: 100%;">Login</button>
+            </div>
+            <div class="modal-footer">
+                <p>Belum punya akun? <a href="#" id="registerLink">Daftar di sini</a></p>
+                <p><a href="#" id="adminLoginLink">Login sebagai Admin</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Candidate Modal -->
+    <div class="modal" id="candidateModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="candidateModalTitle">Tambah Kandidat</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="candidateName">Nama Kandidat</label>
+                    <input type="text" id="candidateName" placeholder="Masukkan nama kandidat">
+                </div>
+                <div class="form-group">
+                    <label for="candidateProgram">Program Studi & Semester</label>
+                    <input type="text" id="candidateProgram" placeholder="Contoh: Teknik Informatika - Semester 7">
+                </div>
+                <div class="form-group">
+                    <label for="candidateVision">Visi</label>
+                    <textarea id="candidateVision" placeholder="Masukkan visi kandidat"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="candidateMission">Misi (pisahkan dengan baris baru)</label>
+                    <textarea id="candidateMission" placeholder="Masukkan misi kandidat, setiap misi dipisahkan dengan baris baru"></textarea>
+                </div>
+                <button class="btn" id="saveCandidateBtn" style="width: 100%;">Simpan Kandidat</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Modal -->
+    <div class="modal" id="resultsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Hasil Pemilihan</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="resultsContainer">
+                    <!-- Hasil voting akan ditampilkan di sini -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-logo">
+                <i class="fas fa-vote-yea"></i>
+            </div>
+            <p>Pemilihan Ketua IMM Periode 2025-2026</p>
+            <div class="footer-links">
+                <a href="#">Tentang</a>
+                <a href="#">Kebijakan Privasi</a>
+                <a href="#">Kontak</a>
+            </div>
+            <p>&copy; 2023 IMM. Semua hak dilindungi.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+          apiKey: "AIzaSyDhJj0hNeDIsD3jxnOPxHWyvvfXwNUxE8I",
+          authDomain: "immuad-1d18a.firebaseapp.com",
+          projectId: "immuad-1d18a",
+          storageBucket: "immuad-1d18a.firebasestorage.app",
+          messagingSenderId: "558116990905",
+          appId: "1:558116990905:web:27d7df924f28a089dbd068",
+          measurementId: "G-0YBW40V890"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // DOM Elements
+        const loginModal = document.getElementById('loginModal');
+        const loginLink = document.getElementById('loginLink');
+        const closeModal = document.querySelectorAll('.close');
+        const loginBtn = document.getElementById('loginBtn');
+        const registerLink = document.getElementById('registerLink');
+        const submitVoteBtn = document.getElementById('submitVote');
+        const voteNowBtn = document.getElementById('voteNowBtn');
+        const userInfo = document.getElementById('userInfo');
+        const userName = document.getElementById('userName');
+        const adminLink = document.getElementById('adminLink');
+        const logoutLink = document.getElementById('logoutLink');
+        const adminSection = document.getElementById('adminSection');
+        const addCandidateBtn = document.getElementById('addCandidateBtn');
+        const viewResultsBtn = document.getElementById('viewResultsBtn');
+        const candidateModal = document.getElementById('candidateModal');
+        const resultsModal = document.getElementById('resultsModal');
+        const saveCandidateBtn = document.getElementById('saveCandidateBtn');
+        const adminLoginLink = document.getElementById('adminLoginLink');
+        const adminCodeGroup = document.getElementById('adminCodeGroup');
+        
+        const candidatesContainer = document.getElementById('candidatesContainer');
+        const voteOptionsContainer = document.getElementById('voteOptionsContainer');
+        const adminCandidatesList = document.getElementById('adminCandidatesList');
+        const resultsContainer = document.getElementById('resultsContainer');
+
+        // State variables
+        let selectedCandidate = null;
+        let isAdmin = false;
+        let isAdminLogin = false;
+        let editingCandidateId = null;
+        const ADMIN_CODE = "IMMUADJAYAKU"; // Kode admin yang sudah diubah
+
+        // Check if user is already logged in
+        function checkAuthState() {
+            const userData = localStorage.getItem('userData');
+            if (userData) {
+                const user = JSON.parse(userData);
+                updateUIForLoggedInUser(user);
+            }
+            loadCandidates();
+        }
+
+        // Load candidates from Firestore
+        function loadCandidates() {
+            db.collection('candidates').orderBy('createdAt', 'asc').get()
+                .then((querySnapshot) => {
+                    candidatesContainer.innerHTML = '';
+                    voteOptionsContainer.innerHTML = '';
+                    adminCandidatesList.innerHTML = '';
+                    
+                    querySnapshot.forEach((doc) => {
+                        const candidate = doc.data();
+                        candidate.id = doc.id;
+                        
+                        // Render candidate cards for public view
+                        renderCandidateCard(candidate);
+                        
+                        // Render vote options
+                        renderVoteOption(candidate);
+                        
+                        // Render admin candidate cards if admin
+                        if (isAdmin) {
+                            renderAdminCandidateCard(candidate);
+                        }
+                    });
+                })
+                .catch((error) => {
+                    console.error("Error loading candidates: ", error);
+                });
+        }
+
+        // Render candidate card for public view
+        function renderCandidateCard(candidate) {
+            const missionItems = candidate.mission.split('\n').map(item => 
+                `<li>${item}</li>`
+            ).join('');
+            
+            const candidateCard = document.createElement('div');
+            candidateCard.className = 'candidate-card';
+            candidateCard.innerHTML = `
+                <div class="candidate-img">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="candidate-info">
+                    <h3>${candidate.name}</h3>
+                    <p>${candidate.program}</p>
+                    <p><strong>Visi:</strong> ${candidate.vision}</p>
+                    <p><strong>Misi:</strong></p>
+                    <ul>${missionItems}</ul>
+                </div>
+            `;
+            candidatesContainer.appendChild(candidateCard);
+        }
+
+        // Render vote option
+        function renderVoteOption(candidate) {
+            const voteOption = document.createElement('div');
+            voteOption.className = 'vote-option';
+            voteOption.setAttribute('data-candidate', candidate.id);
+            voteOption.innerHTML = `
+                <i class="fas fa-user"></i>
+                <h3>${candidate.name}</h3>
+                <p>${candidate.program}</p>
+            `;
+            
+            voteOption.addEventListener('click', () => {
+                // Remove selected class from all options
+                document.querySelectorAll('.vote-option').forEach(opt => opt.classList.remove('selected'));
+                
+                // Add selected class to clicked option
+                voteOption.classList.add('selected');
+                
+                // Set selected candidate
+                selectedCandidate = candidate.id;
+            });
+            
+            voteOptionsContainer.appendChild(voteOption);
+        }
+
+        // Render admin candidate card
+        function renderAdminCandidateCard(candidate) {
+            const adminCard = document.createElement('div');
+            adminCard.className = 'admin-candidate-card';
+            adminCard.innerHTML = `
+                <div class="candidate-img">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="candidate-info">
+                    <h3>${candidate.name}</h3>
+                    <p>${candidate.program}</p>
+                    <p><strong>Visi:</strong> ${candidate.vision}</p>
+                </div>
+                <div class="admin-candidate-actions">
+                    <button class="btn btn-secondary edit-candidate" data-id="${candidate.id}">Edit</button>
+                    <button class="btn btn-danger delete-candidate" data-id="${candidate.id}">Hapus</button>
+                </div>
+            `;
+            
+            adminCandidatesList.appendChild(adminCard);
+            
+            // Add event listeners for edit and delete buttons
+            adminCard.querySelector('.edit-candidate').addEventListener('click', () => {
+                editCandidate(candidate);
+            });
+            
+            adminCard.querySelector('.delete-candidate').addEventListener('click', () => {
+                deleteCandidate(candidate.id);
+            });
+        }
+
+        // Update UI for logged in user
+        function updateUIForLoggedInUser(user) {
+            loginLink.style.display = 'none';
+            userInfo.style.display = 'flex';
+            userName.textContent = user.name;
+            logoutLink.style.display = 'block';
+            
+            // Show admin link if user is admin
+            if (user.isAdmin) {
+                adminLink.style.display = 'block';
+                isAdmin = true;
+            }
+        }
+
+        // Edit candidate
+        function editCandidate(candidate) {
+            editingCandidateId = candidate.id;
+            document.getElementById('candidateModalTitle').textContent = 'Edit Kandidat';
+            document.getElementById('candidateName').value = candidate.name;
+            document.getElementById('candidateProgram').value = candidate.program;
+            document.getElementById('candidateVision').value = candidate.vision;
+            document.getElementById('candidateMission').value = candidate.mission;
+            candidateModal.style.display = 'flex';
+        }
+
+        // Delete candidate
+        function deleteCandidate(candidateId) {
+            if (confirm('Apakah Anda yakin ingin menghapus kandidat ini?')) {
+                db.collection('candidates').doc(candidateId).delete()
+                    .then(() => {
+                        alert('Kandidat berhasil dihapus');
+                        loadCandidates();
+                    })
+                    .catch((error) => {
+                        console.error("Error deleting candidate: ", error);
+                        alert('Terjadi kesalahan saat menghapus kandidat');
+                    });
+            }
+        }
+
+        // Show voting results
+        function showResults() {
+            resultsContainer.innerHTML = '<p>Memuat hasil...</p>';
+            resultsModal.style.display = 'flex';
+            
+            // Get all votes
+            db.collection('votes').get()
+                .then((querySnapshot) => {
+                    const votes = {};
+                    let totalVotes = 0;
+                    
+                    // Initialize vote counts
+                    db.collection('candidates').get()
+                        .then((candidatesSnapshot) => {
+                            candidatesSnapshot.forEach((doc) => {
+                                votes[doc.id] = {
+                                    name: doc.data().name,
+                                    count: 0
+                                };
+                            });
+                            
+                            // Count votes
+                            querySnapshot.forEach((doc) => {
+                                const vote = doc.data();
+                                if (votes[vote.candidate]) {
+                                    votes[vote.candidate].count++;
+                                    totalVotes++;
+                                }
+                            });
+                            
+                            // Display results
+                            let resultsHTML = `<p><strong>Total Suara: ${totalVotes}</strong></p>`;
+                            
+                            Object.keys(votes).forEach(candidateId => {
+                                const candidate = votes[candidateId];
+                                const percentage = totalVotes > 0 ? 
+                                    ((candidate.count / totalVotes) * 100).toFixed(2) : 0;
+                                
+                                resultsHTML += `
+                                    <div style="margin-bottom: 1rem; padding: 1rem; background: #f9f9f9; border-radius: 5px;">
+                                        <h3>${candidate.name}</h3>
+                                        <p>Suara: ${candidate.count} (${percentage}%)</p>
+                                        <div style="background: #e0e0e0; height: 20px; border-radius: 10px; margin-top: 5px;">
+                                            <div style="background: var(--maroon); height: 100%; width: ${percentage}%; border-radius: 10px;"></div>
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                            
+                            resultsContainer.innerHTML = resultsHTML;
+                        });
+                })
+                .catch((error) => {
+                    console.error("Error loading results: ", error);
+                    resultsContainer.innerHTML = '<p>Terjadi kesalahan saat memuat hasil.</p>';
+                });
+        }
+
+        // Event Listeners
+        loginLink.addEventListener('click', () => {
+            isAdminLogin = false;
+            adminCodeGroup.style.display = 'none';
+            loginModal.style.display = 'flex';
+        });
+
+        closeModal.forEach(closeBtn => {
+            closeBtn.addEventListener('click', () => {
+                loginModal.style.display = 'none';
+                candidateModal.style.display = 'none';
+                resultsModal.style.display = 'none';
+                editingCandidateId = null;
+            });
+        });
+
+        window.addEventListener('click', (e) => {
+            if (e.target === loginModal) {
+                loginModal.style.display = 'none';
+            }
+            if (e.target === candidateModal) {
+                candidateModal.style.display = 'none';
+                editingCandidateId = null;
+            }
+            if (e.target === resultsModal) {
+                resultsModal.style.display = 'none';
+            }
+        });
+
+        adminLoginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            isAdminLogin = true;
+            adminCodeGroup.style.display = 'block';
+        });
+
+        addCandidateBtn.addEventListener('click', () => {
+            editingCandidateId = null;
+            document.getElementById('candidateModalTitle').textContent = 'Tambah Kandidat';
+            document.getElementById('candidateName').value = '';
+            document.getElementById('candidateProgram').value = '';
+            document.getElementById('candidateVision').value = '';
+            document.getElementById('candidateMission').value = '';
+            candidateModal.style.display = 'flex';
+        });
+
+        viewResultsBtn.addEventListener('click', () => {
+            showResults();
+        });
+
+        saveCandidateBtn.addEventListener('click', () => {
+            const name = document.getElementById('candidateName').value;
+            const program = document.getElementById('candidateProgram').value;
+            const vision = document.getElementById('candidateVision').value;
+            const mission = document.getElementById('candidateMission').value;
+            
+            if (!name || !program || !vision || !mission) {
+                alert('Silakan isi semua data kandidat!');
+                return;
+            }
+            
+            const candidateData = {
+                name,
+                program,
+                vision,
+                mission,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            if (editingCandidateId) {
+                // Update existing candidate
+                db.collection('candidates').doc(editingCandidateId).update(candidateData)
+                    .then(() => {
+                        alert('Kandidat berhasil diperbarui');
+                        candidateModal.style.display = 'none';
+                        loadCandidates();
+                        editingCandidateId = null;
+                    })
+                    .catch((error) => {
+                        console.error("Error updating candidate: ", error);
+                        alert('Terjadi kesalahan saat memperbarui kandidat');
+                    });
+            } else {
+                // Add new candidate
+                db.collection('candidates').add(candidateData)
+                    .then(() => {
+                        alert('Kandidat berhasil ditambahkan');
+                        candidateModal.style.display = 'none';
+                        loadCandidates();
+                    })
+                    .catch((error) => {
+                        console.error("Error adding candidate: ", error);
+                        alert('Terjadi kesalahan saat menambahkan kandidat');
+                    });
+            }
+        });
+
+        submitVoteBtn.addEventListener('click', () => {
+            if (!selectedCandidate) {
+                alert('Silakan pilih kandidat terlebih dahulu!');
+                return;
+            }
+            
+            const userData = localStorage.getItem('userData');
+            if (!userData) {
+                alert('Anda harus login terlebih dahulu untuk melakukan voting!');
+                loginModal.style.display = 'flex';
+                return;
+            }
+            
+            const user = JSON.parse(userData);
+            
+            // Check if user has already voted
+            const hasVoted = localStorage.getItem(`voted_${user.nim}`);
+            if (hasVoted) {
+                alert('Anda sudah melakukan voting sebelumnya!');
+                return;
+            }
+            
+            // Save vote to Firestore
+            db.collection('votes').add({
+                candidate: selectedCandidate,
+                userId: user.nim,
+                userName: user.name,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            })
+            .then(() => {
+                // Mark user as voted
+                localStorage.setItem(`voted_${user.nim}`, 'true');
+                alert('Terima kasih! Suara Anda telah tercatat.');
+                // Reset selection
+                document.querySelectorAll('.vote-option').forEach(opt => opt.classList.remove('selected'));
+                selectedCandidate = null;
+            })
+            .catch(error => {
+                console.error('Error saving vote: ', error);
+                alert('Terjadi kesalahan. Silakan coba lagi.');
+            });
+        });
+
+        voteNowBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('voteLink').click();
+        });
+
+        adminLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            adminSection.style.display = 'block';
+            document.querySelector('.candidates').style.display = 'none';
+            document.querySelector('.vote-section').style.display = 'none';
+            document.querySelector('.hero').style.display = 'none';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        logoutLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            localStorage.removeItem('userData');
+            loginLink.style.display = 'block';
+            userInfo.style.display = 'none';
+            logoutLink.style.display = 'none';
+            adminLink.style.display = 'none';
+            adminSection.style.display = 'none';
+            isAdmin = false;
+            
+            // Show hidden sections
+            document.querySelector('.candidates').style.display = 'grid';
+            document.querySelector('.vote-section').style.display = 'block';
+            document.querySelector('.hero').style.display = 'block';
+        });
+
+        // Login functionality
+        loginBtn.addEventListener('click', () => {
+            const name = document.getElementById('name').value;
+            const nim = document.getElementById('nim').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const adminCode = document.getElementById('adminCode').value;
+            
+            if (!name || !nim || !email || !password) {
+                alert('Silakan isi semua data!');
+                return;
+            }
+            
+            // Validate NIM format (example: 10 digits)
+            if (!/^\d{10}$/.test(nim)) {
+                alert('NIM harus terdiri dari 10 digit angka!');
+                return;
+            }
+            
+            // Check admin code if admin login
+            if (isAdminLogin) {
+                if (adminCode !== ADMIN_CODE) {
+                    alert('Kode admin salah!');
+                    return;
+                }
+            }
+            
+            // For demo purposes, we'll use localStorage instead of Firebase auth
+            const userData = {
+                name: name,
+                nim: nim,
+                email: email,
+                isAdmin: isAdminLogin
+            };
+            
+            // Save user data to localStorage
+            localStorage.setItem('userData', JSON.stringify(userData));
+            
+            // Update UI
+            updateUIForLoggedInUser(userData);
+            
+            alert('Login berhasil!');
+            loginModal.style.display = 'none';
+            
+            // Reset form
+            document.getElementById('name').value = '';
+            document.getElementById('nim').value = '';
+            document.getElementById('email').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('adminCode').value = '';
+            isAdminLogin = false;
+            adminCodeGroup.style.display = 'none';
+        });
+
+        // Register functionality
+        registerLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const nim = document.getElementById('nim').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!name || !nim || !email || !password) {
+                alert('Silakan isi semua data untuk pendaftaran!');
+                return;
+            }
+            
+            // Validate NIM format
+            if (!/^\d{10}$/.test(nim)) {
+                alert('NIM harus terdiri dari 10 digit angka!');
+                return;
+            }
+            
+            // For demo purposes, we'll use localStorage instead of Firebase auth
+            const userData = {
+                name: name,
+                nim: nim,
+                email: email,
+                isAdmin: false
+            };
+            
+            // Save user data to localStorage
+            localStorage.setItem('userData', JSON.stringify(userData));
+            
+            // Update UI
+            updateUIForLoggedInUser(userData);
+            
+            alert('Pendaftaran berhasil! Anda sekarang dapat login.');
+            loginModal.style.display = 'none';
+            
+            // Reset form
+            document.getElementById('name').value = '';
+            document.getElementById('nim').value = '';
+            document.getElementById('email').value = '';
+            document.getElementById('password').value = '';
+        });
+
+        // Navigation
+        document.getElementById('homeLink').addEventListener('click', (e) => {
+            e.preventDefault();
+            adminSection.style.display = 'none';
+            document.querySelector('.candidates').style.display = 'grid';
+            document.querySelector('.vote-section').style.display = 'block';
+            document.querySelector('.hero').style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        document.getElementById('candidatesLink').addEventListener('click', (e) => {
+            e.preventDefault();
+            adminSection.style.display = 'none';
+            document.querySelector('.candidates').style.display = 'grid';
+            document.querySelector('.vote-section').style.display = 'block';
+            document.querySelector('.hero').style.display = 'block';
+            document.querySelector('.section-title').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        document.getElementById('voteLink').addEventListener('click', (e) => {
+            e.preventDefault();
+            adminSection.style.display = 'none';
+            document.querySelector('.candidates').style.display = 'grid';
+            document.querySelector('.vote-section').style.display = 'block';
+            document.querySelector('.hero').style.display = 'block';
+            document.getElementById('submitVote').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // Check authentication state on page load
+        document.addEventListener('DOMContentLoaded', checkAuthState);
+    </script>
+</body>
+</html>
