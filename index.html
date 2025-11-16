@@ -9,7 +9,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <style>
-        /* CSS tetap sama seperti sebelumnya */
         * {
             margin: 0;
             padding: 0;
@@ -23,6 +22,7 @@
             --dark-maroon: #5a0000;
             --cream: #f5f5dc;
             --gold: #daa520;
+            --light-gold: #f0d483;
         }
 
         body {
@@ -37,12 +37,15 @@
             padding: 0 20px;
         }
 
-        /* Header Styles */
+        /* Header Styles - IMPROVED */
         header {
-            background: linear-gradient(to right, var(--dark-maroon), var(--maroon));
+            background: linear-gradient(135deg, var(--dark-maroon), var(--maroon));
             color: white;
-            padding: 1rem 0;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 0.8rem 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
 
         .header-content {
@@ -54,50 +57,99 @@
         .logo {
             display: flex;
             align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            background: var(--gold);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         }
 
         .logo i {
-            font-size: 2.5rem;
-            margin-right: 10px;
-            color: var(--gold);
-        }
-
-        .logo h1 {
             font-size: 1.8rem;
+            color: var(--dark-maroon);
         }
 
-        .logo span {
-            font-size: 1rem;
+        .logo-text h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .logo-text span {
+            font-size: 0.9rem;
             display: block;
-            font-weight: normal;
+            font-weight: 400;
+            opacity: 0.9;
         }
 
         nav ul {
             display: flex;
             list-style: none;
-            align-items: center;
+            gap: 5px;
         }
 
         nav ul li {
-            margin-left: 15px;
+            position: relative;
         }
 
         nav ul li a {
             color: white;
             text-decoration: none;
             font-weight: 500;
-            padding: 5px 10px;
-            border-radius: 4px;
-            transition: background 0.3s;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         nav ul li a:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        nav ul li a.active {
             background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-info {
+            display: none;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 6px 14px;
+            border-radius: 20px;
+            margin-left: 10px;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .user-info i {
+            font-size: 1rem;
+        }
+
+        /* Mobile Menu Button */
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
         }
 
         /* Hero Section */
         .hero {
-            background: linear-gradient(rgba(128, 0, 0, 0.8), rgba(128, 0, 0, 0.9)), var(--maroon);
+            background: linear-gradient(rgba(128, 0, 0, 0.8), rgba(128, 0, 0, 0.9)), url('https://images.unsplash.com/photo-1523580494863-6f3031224c94?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80');
             background-size: cover;
             background-position: center;
             color: white;
@@ -128,7 +180,6 @@
             transition: all 0.3s;
             border: none;
             cursor: pointer;
-            margin: 0 10px;
         }
 
         .btn:hover {
@@ -143,17 +194,6 @@
 
         .btn-secondary:hover {
             background: var(--dark-maroon);
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 2px solid white;
-            color: white;
-        }
-
-        .btn-outline:hover {
-            background: white;
-            color: var(--maroon);
         }
 
         .btn-danger {
@@ -266,7 +306,44 @@
             margin-bottom: 0.5rem;
         }
 
-        /* Login Modal */
+        /* Admin Dashboard */
+        .admin-section {
+            display: none;
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 3rem;
+        }
+
+        .admin-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+        }
+
+        .candidates-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .admin-candidate-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            border: 1px solid #eee;
+        }
+
+        .admin-candidate-actions {
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px solid #eee;
+        }
+
+        /* Modal Styles */
         .modal {
             display: none;
             position: fixed;
@@ -340,57 +417,6 @@
             color: white;
         }
 
-        /* User Info */
-        .user-info {
-            display: none;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 5px 15px;
-            border-radius: 20px;
-            margin-left: 20px;
-        }
-
-        .user-info i {
-            margin-right: 8px;
-        }
-
-        /* Admin Dashboard */
-        .admin-section {
-            display: none;
-            background: white;
-            border-radius: 10px;
-            padding: 2rem;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            margin-bottom: 3rem;
-        }
-
-        .admin-controls {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 2rem;
-        }
-
-        .candidates-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .admin-candidate-card {
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-            border: 1px solid #eee;
-        }
-
-        .admin-candidate-actions {
-            padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            border-top: 1px solid #eee;
-        }
-
         /* Footer */
         footer {
             background: var(--dark-maroon);
@@ -429,18 +455,47 @@
         /* Responsive */
         @media (max-width: 768px) {
             .header-content {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            nav ul {
-                margin-top: 1rem;
-                justify-content: center;
                 flex-wrap: wrap;
             }
-
+            
+            .logo {
+                flex: 1;
+            }
+            
+            .mobile-menu-btn {
+                display: block;
+            }
+            
+            nav {
+                width: 100%;
+                display: none;
+                margin-top: 1rem;
+            }
+            
+            nav.active {
+                display: block;
+            }
+            
+            nav ul {
+                flex-direction: column;
+                gap: 0;
+            }
+            
             nav ul li {
-                margin: 5px;
+                margin: 0;
+            }
+            
+            nav ul li a {
+                padding: 12px 16px;
+                border-radius: 0;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            
+            .user-info {
+                margin: 10px 0;
+                display: inline-flex;
+                width: 100%;
+                justify-content: center;
             }
 
             .hero h2 {
@@ -455,26 +510,6 @@
                 flex-direction: column;
                 gap: 1rem;
             }
-
-            .btn {
-                margin: 5px;
-                display: block;
-                width: 100%;
-            }
-
-            .hero-buttons {
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-            }
-        }
-
-        /* Hero Buttons Container */
-        .hero-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            flex-wrap: wrap;
         }
     </style>
 </head>
@@ -483,25 +518,31 @@
     <header>
         <div class="container header-content">
             <div class="logo">
-                <i class="fas fa-vote-yea"></i>
-                <div>
+                <div class="logo-icon">
+                    <i class="fas fa-vote-yea"></i>
+                </div>
+                <div class="logo-text">
                     <h1>Pemilihan Ketua IMM</h1>
                     <span>Ikatan Mahasiswa Muhammadiyah</span>
                 </div>
             </div>
-            <nav>
+            
+            <button class="mobile-menu-btn" id="mobileMenuBtn">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <nav id="mainNav">
                 <ul>
-                    <li><a href="#" id="homeLink">Beranda</a></li>
-                    <li><a href="#" id="candidatesLink">Kandidat</a></li>
-                    <li><a href="#" id="voteLink">Voting</a></li>
-                    <li><a href="#" id="adminLink" style="display:none;">Admin</a></li>
-                    <li><a href="#" id="loginLink">Login</a></li>
-                    <li><a href="#" class="btn btn-outline" id="registerHeaderBtn">Daftar Akun</a></li>
+                    <li><a href="#" id="homeLink" class="active"><i class="fas fa-home"></i> Beranda</a></li>
+                    <li><a href="#" id="candidatesLink"><i class="fas fa-users"></i> Kandidat</a></li>
+                    <li><a href="#" id="voteLink"><i class="fas fa-vote-yea"></i> Voting</a></li>
+                    <li><a href="#" id="adminLink" style="display:none;"><i class="fas fa-cog"></i> Admin</a></li>
+                    <li><a href="login.html" id="loginLink"><i class="fas fa-sign-in-alt"></i> Login</a></li>
                     <li class="user-info" id="userInfo">
                         <i class="fas fa-user"></i>
                         <span id="userName"></span>
                     </li>
-                    <li><a href="#" id="logoutLink" style="display:none;">Logout</a></li>
+                    <li><a href="#" id="logoutLink" style="display:none;"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                 </ul>
             </nav>
         </div>
@@ -512,10 +553,7 @@
         <div class="container">
             <h2>Pemilihan Ketua IMM Periode 2023-2024</h2>
             <p>Ikut berpartisipasi dalam menentukan masa depan organisasi dengan memilih calon ketua IMM yang terbaik.</p>
-            <div class="hero-buttons">
-                <a href="#" class="btn" id="voteNowBtn">Voting Sekarang</a>
-                <a href="#" class="btn btn-outline" id="registerHeroBtn">Daftar Akun Baru</a>
-            </div>
+            <a href="#" class="btn" id="voteNowBtn">Voting Sekarang</a>
         </div>
     </section>
 
@@ -556,66 +594,6 @@
             </div>
         </div>
     </section>
-
-    <!-- Login Modal -->
-    <div class="modal" id="loginModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="loginModalTitle">Login Pemilihan</h2>
-                <span class="close">&times;</span>
-            </div>
-            <div class="modal-body">
-                <div id="loginForm">
-                    <div class="form-group">
-                        <label for="loginUsername">Username</label>
-                        <input type="text" id="loginUsername" placeholder="Masukkan username Anda">
-                    </div>
-                    <div class="form-group">
-                        <label for="loginNim">NIM</label>
-                        <input type="text" id="loginNim" placeholder="Masukkan NIM Anda">
-                    </div>
-                    <div class="form-group">
-                        <label for="loginPassword">Password</label>
-                        <input type="password" id="loginPassword" placeholder="Masukkan password Anda">
-                    </div>
-                    <div class="form-group" id="adminCodeGroup" style="display:none;">
-                        <label for="adminCode">Kode Admin</label>
-                        <input type="password" id="adminCode" placeholder="Masukkan kode admin">
-                    </div>
-                    <button class="btn" id="loginBtn" style="width: 100%;">Login</button>
-                </div>
-                
-                <div id="registerForm" style="display:none;">
-                    <div class="form-group">
-                        <label for="regName">Nama Lengkap</label>
-                        <input type="text" id="regName" placeholder="Masukkan nama lengkap Anda">
-                    </div>
-                    <div class="form-group">
-                        <label for="regUsername">Username</label>
-                        <input type="text" id="regUsername" placeholder="Masukkan username unik">
-                    </div>
-                    <div class="form-group">
-                        <label for="regNim">NIM</label>
-                        <input type="text" id="regNim" placeholder="Masukkan NIM Anda">
-                    </div>
-                    <div class="form-group">
-                        <label for="regEmail">Email</label>
-                        <input type="email" id="regEmail" placeholder="Masukkan email Anda">
-                    </div>
-                    <div class="form-group">
-                        <label for="regPassword">Password</label>
-                        <input type="password" id="regPassword" placeholder="Masukkan password (min. 6 karakter)">
-                    </div>
-                    <button class="btn" id="registerBtn" style="width: 100%;">Daftar</button>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <p id="loginFooterText">Belum punya akun? <a href="#" id="registerLink">Daftar di sini</a></p>
-                <p><a href="#" id="adminLoginLink">Login sebagai Admin</a></p>
-                <p id="backToLoginLink" style="display:none;"><a href="#">Kembali ke Login</a></p>
-            </div>
-        </div>
-    </div>
 
     <!-- Add Candidate Modal -->
     <div class="modal" id="candidateModal">
@@ -695,33 +673,21 @@
         const db = firebase.firestore();
 
         // DOM Elements
-        const loginModal = document.getElementById('loginModal');
-        const loginLink = document.getElementById('loginLink');
-        const closeModal = document.querySelectorAll('.close');
-        const loginBtn = document.getElementById('loginBtn');
-        const registerBtn = document.getElementById('registerBtn');
-        const registerLink = document.getElementById('registerLink');
         const submitVoteBtn = document.getElementById('submitVote');
         const voteNowBtn = document.getElementById('voteNowBtn');
-        const userInfo = document.getElementById('userInfo');
-        const userName = document.getElementById('userName');
-        const adminLink = document.getElementById('adminLink');
-        const logoutLink = document.getElementById('logoutLink');
         const adminSection = document.getElementById('adminSection');
         const addCandidateBtn = document.getElementById('addCandidateBtn');
         const viewResultsBtn = document.getElementById('viewResultsBtn');
         const candidateModal = document.getElementById('candidateModal');
         const resultsModal = document.getElementById('resultsModal');
         const saveCandidateBtn = document.getElementById('saveCandidateBtn');
-        const adminLoginLink = document.getElementById('adminLoginLink');
-        const adminCodeGroup = document.getElementById('adminCodeGroup');
-        const backToLoginLink = document.getElementById('backToLoginLink');
-        const loginForm = document.getElementById('loginForm');
-        const registerForm = document.getElementById('registerForm');
-        const loginModalTitle = document.getElementById('loginModalTitle');
-        const loginFooterText = document.getElementById('loginFooterText');
-        const registerHeaderBtn = document.getElementById('registerHeaderBtn');
-        const registerHeroBtn = document.getElementById('registerHeroBtn');
+        const userInfo = document.getElementById('userInfo');
+        const userName = document.getElementById('userName');
+        const adminLink = document.getElementById('adminLink');
+        const logoutLink = document.getElementById('logoutLink');
+        const loginLink = document.getElementById('loginLink');
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mainNav = document.getElementById('mainNav');
         
         const candidatesContainer = document.getElementById('candidatesContainer');
         const voteOptionsContainer = document.getElementById('voteOptionsContainer');
@@ -731,9 +697,20 @@
         // State variables
         let selectedCandidate = null;
         let isAdmin = false;
-        let isAdminLogin = false;
         let editingCandidateId = null;
-        const ADMIN_CODE = "IMMUADJAYAKU"; // Kode admin yang sudah diubah
+
+        // Mobile menu toggle
+        mobileMenuBtn.addEventListener('click', () => {
+            mainNav.classList.toggle('active');
+        });
+
+        // Update active nav link
+        function updateActiveNavLink(activeLinkId) {
+            document.querySelectorAll('nav a').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.getElementById(activeLinkId).classList.add('active');
+        }
 
         // Check if user is already logged in
         function checkAuthState() {
@@ -755,6 +732,13 @@
                 } else {
                     // User is signed out
                     console.log('User is signed out');
+                    // Reset UI
+                    loginLink.style.display = 'block';
+                    userInfo.style.display = 'none';
+                    logoutLink.style.display = 'none';
+                    adminLink.style.display = 'none';
+                    adminSection.style.display = 'none';
+                    isAdmin = false;
                 }
             });
             
@@ -778,38 +762,18 @@
                 });
         }
 
-        // Check if username already exists
-        function checkUsernameExists(username) {
-            return db.collection('users').where('username', '==', username).get()
-                .then((querySnapshot) => {
-                    return !querySnapshot.empty;
-                });
-        }
-
-        // Check if NIM already exists
-        function checkNimExists(nim) {
-            return db.collection('users').where('nim', '==', nim).get()
-                .then((querySnapshot) => {
-                    return !querySnapshot.empty;
-                });
-        }
-
-        // Find user by username and NIM for login
-        function findUserByUsernameAndNim(username, nim) {
-            return db.collection('users')
-                .where('username', '==', username)
-                .where('nim', '==', nim)
-                .get()
-                .then((querySnapshot) => {
-                    if (!querySnapshot.empty) {
-                        const userDoc = querySnapshot.docs[0];
-                        return {
-                            id: userDoc.id,
-                            data: userDoc.data()
-                        };
-                    }
-                    return null;
-                });
+        // Update UI for logged in user
+        function updateUIForLoggedInUser(user) {
+            loginLink.style.display = 'none';
+            userInfo.style.display = 'flex';
+            userName.textContent = user.name;
+            logoutLink.style.display = 'block';
+            
+            // Show admin link if user is admin
+            if (user.isAdmin) {
+                adminLink.style.display = 'block';
+                isAdmin = true;
+            }
         }
 
         // Load candidates from Firestore untuk public view
@@ -946,31 +910,6 @@
             });
         }
 
-        // Update UI for logged in user
-        function updateUIForLoggedInUser(user) {
-            loginLink.style.display = 'none';
-            userInfo.style.display = 'flex';
-            userName.textContent = user.name;
-            logoutLink.style.display = 'block';
-            registerHeaderBtn.style.display = 'none';
-            
-            // Show admin link if user is admin
-            if (user.isAdmin) {
-                adminLink.style.display = 'block';
-                isAdmin = true;
-            }
-        }
-
-        // Show register form
-        function showRegisterForm() {
-            loginForm.style.display = 'none';
-            registerForm.style.display = 'block';
-            loginModalTitle.textContent = 'Daftar Akun Baru';
-            loginFooterText.innerHTML = 'Sudah punya akun? <a href="#" id="loginLink">Login di sini</a>';
-            backToLoginLink.style.display = 'block';
-            loginModal.style.display = 'flex';
-        }
-
         // Edit candidate
         function editCandidate(candidate) {
             editingCandidateId = candidate.id;
@@ -1060,32 +999,9 @@
         }
 
         // Event Listeners
-        loginLink.addEventListener('click', () => {
-            isAdminLogin = false;
-            adminCodeGroup.style.display = 'none';
-            loginForm.style.display = 'block';
-            registerForm.style.display = 'none';
-            loginModalTitle.textContent = 'Login Pemilihan';
-            loginFooterText.innerHTML = 'Belum punya akun? <a href="#" id="registerLink">Daftar di sini</a>';
-            backToLoginLink.style.display = 'none';
-            loginModal.style.display = 'flex';
-        });
-
-        // Tombol daftar akun di header
-        registerHeaderBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            showRegisterForm();
-        });
-
-        // Tombol daftar akun di hero section
-        registerHeroBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            showRegisterForm();
-        });
-
+        const closeModal = document.querySelectorAll('.close');
         closeModal.forEach(closeBtn => {
             closeBtn.addEventListener('click', () => {
-                loginModal.style.display = 'none';
                 candidateModal.style.display = 'none';
                 resultsModal.style.display = 'none';
                 editingCandidateId = null;
@@ -1093,9 +1009,6 @@
         });
 
         window.addEventListener('click', (e) => {
-            if (e.target === loginModal) {
-                loginModal.style.display = 'none';
-            }
             if (e.target === candidateModal) {
                 candidateModal.style.display = 'none';
                 editingCandidateId = null;
@@ -1105,27 +1018,13 @@
             }
         });
 
-        adminLoginLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            isAdminLogin = true;
-            adminCodeGroup.style.display = 'block';
-        });
-
-        registerLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            showRegisterForm();
-        });
-
-        backToLoginLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            loginForm.style.display = 'block';
-            registerForm.style.display = 'none';
-            loginModalTitle.textContent = 'Login Pemilihan';
-            loginFooterText.innerHTML = 'Belum punya akun? <a href="#" id="registerLink">Daftar di sini</a>';
-            backToLoginLink.style.display = 'none';
-        });
-
         addCandidateBtn.addEventListener('click', () => {
+            // Check if user is admin
+            if (!isAdmin) {
+                alert('Hanya admin yang dapat menambah kandidat!');
+                return;
+            }
+            
             editingCandidateId = null;
             document.getElementById('candidateModalTitle').textContent = 'Tambah Kandidat';
             document.getElementById('candidateName').value = '';
@@ -1140,6 +1039,12 @@
         });
 
         saveCandidateBtn.addEventListener('click', () => {
+            // Check if user is admin
+            if (!isAdmin) {
+                alert('Hanya admin yang dapat menambah atau mengedit kandidat!');
+                return;
+            }
+            
             const name = document.getElementById('candidateName').value;
             const program = document.getElementById('candidateProgram').value;
             const vision = document.getElementById('candidateVision').value;
@@ -1203,7 +1108,7 @@
             const user = auth.currentUser;
             if (!user) {
                 alert('Anda harus login terlebih dahulu untuk melakukan voting!');
-                loginModal.style.display = 'flex';
+                window.location.href = 'login.html';
                 return;
             }
             
@@ -1239,7 +1144,7 @@
             document.getElementById('voteLink').click();
         });
 
-        // PERBAIKAN: Event listener untuk admin link
+        // Event listener untuk admin link
         adminLink.addEventListener('click', (e) => {
             e.preventDefault();
             // Sembunyikan semua section
@@ -1249,6 +1154,9 @@
             
             // Tampilkan admin section
             adminSection.style.display = 'block';
+            
+            // Update active nav link
+            updateActiveNavLink('adminLink');
             
             // Load candidates untuk admin jika belum diload
             if (isAdmin) {
@@ -1267,7 +1175,6 @@
                 logoutLink.style.display = 'none';
                 adminLink.style.display = 'none';
                 adminSection.style.display = 'none';
-                registerHeaderBtn.style.display = 'block';
                 isAdmin = false;
                 
                 // Show hidden sections
@@ -1275,168 +1182,13 @@
                 document.querySelector('.candidates').style.display = 'grid';
                 document.querySelector('.vote-section').style.display = 'block';
                 
+                // Update active nav link
+                updateActiveNavLink('homeLink');
+                
                 alert('Logout berhasil!');
             }).catch((error) => {
                 console.error('Error signing out:', error);
             });
-        });
-
-        // Login functionality dengan Firebase Auth
-        loginBtn.addEventListener('click', () => {
-            const username = document.getElementById('loginUsername').value;
-            const nim = document.getElementById('loginNim').value;
-            const password = document.getElementById('loginPassword').value;
-            const adminCode = document.getElementById('adminCode').value;
-            
-            if (!username || !nim || !password) {
-                alert('Silakan isi username, NIM dan password!');
-                return;
-            }
-            
-            // Check admin code if admin login
-            if (isAdminLogin) {
-                if (adminCode !== ADMIN_CODE) {
-                    alert('Kode admin salah!');
-                    return;
-                }
-            }
-            
-            // Find user by username and NIM
-            findUserByUsernameAndNim(username, nim)
-                .then((userData) => {
-                    if (!userData) {
-                        alert('Username atau NIM salah!');
-                        return;
-                    }
-                    
-                    // Get email from user data and login with email/password
-                    const email = userData.data.email;
-                    
-                    return auth.signInWithEmailAndPassword(email, password)
-                        .then((userCredential) => {
-                            // Signed in
-                            const user = userCredential.user;
-                            return userData.data;
-                        });
-                })
-                .then((userData) => {
-                    if (userData) {
-                        updateUIForLoggedInUser(userData);
-                        isAdmin = isAdminLogin;
-                        
-                        alert('Login berhasil!' + (isAdmin ? ' Anda login sebagai admin.' : ''));
-                        loginModal.style.display = 'none';
-                        
-                        // Reset form
-                        document.getElementById('loginUsername').value = '';
-                        document.getElementById('loginNim').value = '';
-                        document.getElementById('loginPassword').value = '';
-                        document.getElementById('adminCode').value = '';
-                        isAdminLogin = false;
-                        adminCodeGroup.style.display = 'none';
-                    }
-                })
-                .catch((error) => {
-                    console.error('Error signing in:', error);
-                    if (error.code === 'auth/wrong-password') {
-                        alert('Password salah!');
-                    } else {
-                        alert('Login gagal: ' + error.message);
-                    }
-                });
-        });
-
-        // Register functionality dengan Firebase Auth
-        registerBtn.addEventListener('click', () => {
-            const name = document.getElementById('regName').value;
-            const username = document.getElementById('regUsername').value;
-            const nim = document.getElementById('regNim').value;
-            const email = document.getElementById('regEmail').value;
-            const password = document.getElementById('regPassword').value;
-            
-            if (!name || !username || !nim || !email || !password) {
-                alert('Silakan isi semua data untuk pendaftaran!');
-                return;
-            }
-            
-            // Validate NIM format
-            if (!/^\d{10,15}$/.test(nim)) {
-                alert('NIM harus terdiri dari 10-15 digit angka!');
-                return;
-            }
-            
-            if (password.length < 6) {
-                alert('Password harus minimal 6 karakter!');
-                return;
-            }
-            
-            if (username.length < 3) {
-                alert('Username harus minimal 3 karakter!');
-                return;
-            }
-            
-            // Check if username already exists
-            checkUsernameExists(username)
-                .then((usernameExists) => {
-                    if (usernameExists) {
-                        alert('Username sudah digunakan! Silakan pilih username lain.');
-                        return Promise.reject(new Error('Username exists'));
-                    }
-                    
-                    // Check if NIM already exists
-                    return checkNimExists(nim);
-                })
-                .then((nimExists) => {
-                    if (nimExists) {
-                        alert('NIM sudah terdaftar!');
-                        return Promise.reject(new Error('NIM exists'));
-                    }
-                    
-                    // Create user with Firebase Auth
-                    return auth.createUserWithEmailAndPassword(email, password);
-                })
-                .then((userCredential) => {
-                    // Signed up successfully
-                    const user = userCredential.user;
-                    
-                    // Save additional user data to Firestore
-                    return db.collection('users').doc(user.uid).set({
-                        name: name,
-                        username: username,
-                        nim: nim,
-                        email: email,
-                        isAdmin: false,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                })
-                .then(() => {
-                    alert('Pendaftaran berhasil! Anda sekarang dapat login.');
-                    // Switch back to login form
-                    loginForm.style.display = 'block';
-                    registerForm.style.display = 'none';
-                    loginModalTitle.textContent = 'Login Pemilihan';
-                    loginFooterText.innerHTML = 'Belum punya akun? <a href="#" id="registerLink">Daftar di sini</a>';
-                    backToLoginLink.style.display = 'none';
-                    
-                    // Reset form
-                    document.getElementById('regName').value = '';
-                    document.getElementById('regUsername').value = '';
-                    document.getElementById('regNim').value = '';
-                    document.getElementById('regEmail').value = '';
-                    document.getElementById('regPassword').value = '';
-                })
-                .catch((error) => {
-                    if (error.message === 'Username exists' || error.message === 'NIM exists') {
-                        // Error already handled
-                        return;
-                    }
-                    console.error('Error signing up:', error);
-                    if (error.code === 'auth/email-already-in-use') {
-                        alert('Email sudah digunakan!');
-                    } else {
-                        alert('Pendaftaran gagal: ' + error.message);
-                    }
-                });
         });
 
         // Navigation
@@ -1446,6 +1198,10 @@
             document.querySelector('.hero').style.display = 'block';
             document.querySelector('.candidates').style.display = 'grid';
             document.querySelector('.vote-section').style.display = 'block';
+            
+            // Update active nav link
+            updateActiveNavLink('homeLink');
+            
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
 
@@ -1455,6 +1211,10 @@
             document.querySelector('.hero').style.display = 'block';
             document.querySelector('.candidates').style.display = 'grid';
             document.querySelector('.vote-section').style.display = 'block';
+            
+            // Update active nav link
+            updateActiveNavLink('candidatesLink');
+            
             document.querySelector('.section-title').scrollIntoView({ behavior: 'smooth' });
         });
 
@@ -1464,6 +1224,10 @@
             document.querySelector('.hero').style.display = 'block';
             document.querySelector('.candidates').style.display = 'grid';
             document.querySelector('.vote-section').style.display = 'block';
+            
+            // Update active nav link
+            updateActiveNavLink('voteLink');
+            
             document.getElementById('submitVote').scrollIntoView({ behavior: 'smooth' });
         });
 
