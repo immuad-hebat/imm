@@ -101,25 +101,30 @@
         .register-container {
             background: white;
             border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            padding: 2.5rem;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
             width: 100%;
             max-width: 500px;
+            overflow: hidden;
         }
 
         .register-header {
+            background: linear-gradient(135deg, var(--dark-maroon), var(--maroon));
+            color: white;
+            padding: 2rem;
             text-align: center;
-            margin-bottom: 2rem;
         }
 
         .register-header h2 {
-            color: var(--maroon);
-            margin-bottom: 0.5rem;
             font-size: 1.8rem;
+            margin-bottom: 0.5rem;
         }
 
         .register-header p {
-            color: #666;
+            opacity: 0.9;
+        }
+
+        .register-body {
+            padding: 2rem;
         }
 
         .form-group {
@@ -133,27 +138,18 @@
             color: var(--maroon);
         }
 
-        .form-control {
+        .form-group input, .form-group select {
             width: 100%;
             padding: 12px 15px;
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 1rem;
-            transition: border-color 0.3s;
+            transition: border 0.3s;
         }
 
-        .form-control:focus {
-            outline: none;
+        .form-group input:focus, .form-group select:focus {
             border-color: var(--maroon);
-        }
-
-        .form-row {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .form-row .form-group {
-            flex: 1;
+            outline: none;
         }
 
         .btn {
@@ -168,7 +164,7 @@
             border: none;
             cursor: pointer;
             width: 100%;
-            font-size: 1rem;
+            text-align: center;
         }
 
         .btn:hover {
@@ -185,20 +181,55 @@
             background: var(--dark-maroon);
         }
 
-        .register-footer {
+        .form-footer {
             text-align: center;
             margin-top: 1.5rem;
-            color: #666;
+            padding-top: 1.5rem;
+            border-top: 1px solid #eee;
         }
 
-        .register-footer a {
+        .form-footer a {
             color: var(--maroon);
             text-decoration: none;
             font-weight: 500;
         }
 
-        .register-footer a:hover {
+        .form-footer a:hover {
             text-decoration: underline;
+        }
+
+        .user-type-selector {
+            display: flex;
+            margin-bottom: 1.5rem;
+            border-radius: 5px;
+            overflow: hidden;
+            border: 1px solid #ddd;
+        }
+
+        .user-type-option {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            background: #f9f9f9;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .user-type-option.active {
+            background: var(--maroon);
+            color: white;
+        }
+
+        .user-type-option:not(.active):hover {
+            background: #eee;
+        }
+
+        .admin-fields, .student-fields {
+            display: none;
+        }
+
+        .admin-fields.active, .student-fields.active {
+            display: block;
         }
 
         .alert {
@@ -209,15 +240,15 @@
         }
 
         .alert-error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
         }
 
         .alert-success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
         }
 
         /* Footer */
@@ -226,7 +257,6 @@
             color: white;
             padding: 2rem 0;
             text-align: center;
-            margin-top: auto;
         }
 
         .footer-content {
@@ -259,12 +289,11 @@
         /* Responsive */
         @media (max-width: 768px) {
             .register-container {
-                padding: 2rem 1.5rem;
+                margin: 0 20px;
             }
             
-            .form-row {
-                flex-direction: column;
-                gap: 0;
+            .register-body {
+                padding: 1.5rem;
             }
         }
     </style>
@@ -287,65 +316,79 @@
 
     <!-- Register Section -->
     <section class="register-section">
-        <div class="container">
-            <div class="register-container">
-                <div class="register-header">
-                    <h2>Daftar Akun Baru</h2>
-                    <p>Buat akun untuk berpartisipasi dalam pemilihan ketua IMM</p>
-                </div>
-
+        <div class="register-container">
+            <div class="register-header">
+                <h2>Daftar Akun Baru</h2>
+                <p>Buat akun untuk mengakses sistem pemilihan ketua IMM</p>
+            </div>
+            <div class="register-body">
                 <div class="alert alert-error" id="errorAlert"></div>
                 <div class="alert alert-success" id="successAlert"></div>
-
+                
+                <div class="user-type-selector">
+                    <div class="user-type-option active" data-type="student">Mahasiswa</div>
+                    <div class="user-type-option" data-type="admin">Admin</div>
+                </div>
+                
                 <form id="registerForm">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="firstName">Nama Depan</label>
-                            <input type="text" id="firstName" class="form-control" placeholder="Masukkan nama depan" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="lastName">Nama Belakang</label>
-                            <input type="text" id="lastName" class="form-control" placeholder="Masukkan nama belakang" required>
-                        </div>
+                    <div class="form-group">
+                        <label for="fullName">Nama Lengkap</label>
+                        <input type="text" id="fullName" placeholder="Masukkan nama lengkap Anda" required>
                     </div>
+                    
                     <div class="form-group">
                         <label for="email">Email</label>
-                        <input type="email" id="email" class="form-control" placeholder="Masukkan email Anda" required>
+                        <input type="email" id="email" placeholder="Masukkan email Anda" required>
                     </div>
-                    <div class="form-group">
-                        <label for="nim">NIM</label>
-                        <input type="text" id="nim" class="form-control" placeholder="Masukkan NIM Anda" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="program">Program Studi</label>
-                        <input type="text" id="program" class="form-control" placeholder="Masukkan program studi" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="semester">Semester</label>
-                        <select id="semester" class="form-control" required>
-                            <option value="">Pilih Semester</option>
-                            <option value="1">Semester 1</option>
-                            <option value="2">Semester 2</option>
-                            <option value="3">Semester 3</option>
-                            <option value="4">Semester 4</option>
-                            <option value="5">Semester 5</option>
-                            <option value="6">Semester 6</option>
-                            <option value="7">Semester 7</option>
-                            <option value="8">Semester 8</option>
-                        </select>
-                    </div>
+                    
                     <div class="form-group">
                         <label for="password">Password</label>
-                        <input type="password" id="password" class="form-control" placeholder="Buat password (min. 6 karakter)" required minlength="6">
+                        <input type="password" id="password" placeholder="Masukkan password (min. 6 karakter)" minlength="6" required>
                     </div>
+                    
                     <div class="form-group">
                         <label for="confirmPassword">Konfirmasi Password</label>
-                        <input type="password" id="confirmPassword" class="form-control" placeholder="Ulangi password Anda" required>
+                        <input type="password" id="confirmPassword" placeholder="Masukkan ulang password" minlength="6" required>
                     </div>
-                    <button type="submit" class="btn" id="registerBtn">Daftar</button>
+                    
+                    <div class="student-fields active">
+                        <div class="form-group">
+                            <label for="nim">NIM</label>
+                            <input type="text" id="nim" placeholder="Masukkan NIM Anda" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="studyProgram">Program Studi</label>
+                            <input type="text" id="studyProgram" placeholder="Masukkan program studi Anda" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="semester">Semester</label>
+                            <select id="semester" required>
+                                <option value="">Pilih Semester</option>
+                                <option value="1">Semester 1</option>
+                                <option value="2">Semester 2</option>
+                                <option value="3">Semester 3</option>
+                                <option value="4">Semester 4</option>
+                                <option value="5">Semester 5</option>
+                                <option value="6">Semester 6</option>
+                                <option value="7">Semester 7</option>
+                                <option value="8">Semester 8</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="admin-fields">
+                        <div class="form-group">
+                            <label for="adminCode">Kode Admin</label>
+                            <input type="password" id="adminCode" placeholder="Masukkan kode admin untuk verifikasi">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn">Daftar</button>
                 </form>
-
-                <div class="register-footer">
+                
+                <div class="form-footer">
                     <p>Sudah punya akun? <a href="login.html">Masuk di sini</a></p>
                     <p><a href="index.html">Kembali ke Beranda</a></p>
                 </div>
@@ -388,17 +431,44 @@
 
         // DOM Elements
         const registerForm = document.getElementById('registerForm');
-        const firstNameInput = document.getElementById('firstName');
-        const lastNameInput = document.getElementById('lastName');
-        const emailInput = document.getElementById('email');
-        const nimInput = document.getElementById('nim');
-        const programInput = document.getElementById('program');
-        const semesterInput = document.getElementById('semester');
-        const passwordInput = document.getElementById('password');
-        const confirmPasswordInput = document.getElementById('confirmPassword');
-        const registerBtn = document.getElementById('registerBtn');
         const errorAlert = document.getElementById('errorAlert');
         const successAlert = document.getElementById('successAlert');
+        const userTypeOptions = document.querySelectorAll('.user-type-option');
+        const studentFields = document.querySelector('.student-fields');
+        const adminFields = document.querySelector('.admin-fields');
+        const nimField = document.getElementById('nim');
+        const studyProgramField = document.getElementById('studyProgram');
+        const semesterField = document.getElementById('semester');
+        const adminCodeField = document.getElementById('adminCode');
+
+        // User type selection
+        userTypeOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                // Remove active class from all options
+                userTypeOptions.forEach(opt => opt.classList.remove('active'));
+                
+                // Add active class to clicked option
+                option.classList.add('active');
+                
+                // Show appropriate fields
+                const userType = option.getAttribute('data-type');
+                if (userType === 'student') {
+                    studentFields.classList.add('active');
+                    adminFields.classList.remove('active');
+                    nimField.required = true;
+                    studyProgramField.required = true;
+                    semesterField.required = true;
+                    adminCodeField.required = false;
+                } else {
+                    studentFields.classList.remove('active');
+                    adminFields.classList.add('active');
+                    nimField.required = false;
+                    studyProgramField.required = false;
+                    semesterField.required = false;
+                    adminCodeField.required = true;
+                }
+            });
+        });
 
         // Show alert message
         function showAlert(alertElement, message) {
@@ -409,95 +479,79 @@
             }, 5000);
         }
 
-        // Register function
+        // Register form submission
         registerForm.addEventListener('submit', (e) => {
             e.preventDefault();
             
-            const firstName = firstNameInput.value.trim();
-            const lastName = lastNameInput.value.trim();
-            const email = emailInput.value.trim();
-            const nim = nimInput.value.trim();
-            const program = programInput.value.trim();
-            const semester = semesterInput.value;
-            const password = passwordInput.value;
-            const confirmPassword = confirmPasswordInput.value;
+            const fullName = document.getElementById('fullName').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const userType = document.querySelector('.user-type-option.active').getAttribute('data-type');
             
-            // Validation
+            // Validate password confirmation
             if (password !== confirmPassword) {
-                showAlert(errorAlert, 'Password dan konfirmasi password tidak cocok.');
+                showAlert(errorAlert, 'Konfirmasi password tidak sesuai!');
                 return;
             }
             
-            if (password.length < 6) {
-                showAlert(errorAlert, 'Password harus minimal 6 karakter.');
-                return;
+            // Validate admin code if admin
+            if (userType === 'admin') {
+                const adminCode = document.getElementById('adminCode').value;
+                if (adminCode !== 'admin123') { // Simple admin code validation
+                    showAlert(errorAlert, 'Kode admin salah!');
+                    return;
+                }
             }
             
-            // Show loading state
-            registerBtn.textContent = 'Mendaftarkan...';
-            registerBtn.disabled = true;
-            
-            // Check if user with same NIM already exists
-            db.collection('users').where('nim', '==', nim).get()
-                .then((querySnapshot) => {
-                    if (!querySnapshot.empty) {
-                        throw new Error('NIM sudah terdaftar. Gunakan NIM lain.');
-                    }
-                    
-                    // Create user with Firebase Auth
-                    return auth.createUserWithEmailAndPassword(email, password);
-                })
+            // Create user with Firebase Auth
+            auth.createUserWithEmailAndPassword(email, password)
                 .then((userCredential) => {
                     // User created successfully
                     const user = userCredential.user;
                     
-                    // Save additional user data to Firestore
-                    return db.collection('users').doc(user.uid).set({
-                        firstName: firstName,
-                        lastName: lastName,
-                        name: `${firstName} ${lastName}`,
+                    // Prepare user data for Firestore
+                    const userData = {
+                        name: fullName,
                         email: email,
-                        nim: nim,
-                        program: program,
-                        semester: semester,
-                        isAdmin: false,
-                        hasVoted: false,
+                        isAdmin: userType === 'admin',
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
+                    };
+                    
+                    // Add student-specific data if student
+                    if (userType === 'student') {
+                        userData.nim = document.getElementById('nim').value;
+                        userData.studyProgram = document.getElementById('studyProgram').value;
+                        userData.semester = document.getElementById('semester').value;
+                    }
+                    
+                    // Save user data to Firestore
+                    return db.collection('users').doc(user.uid).set(userData);
                 })
                 .then(() => {
-                    // Show success message
-                    showAlert(successAlert, 'Pendaftaran berhasil! Mengalihkan...');
-                    
-                    // Redirect to login page after a short delay
+                    // Registration successful
+                    showAlert(successAlert, 'Pendaftaran berhasil! Mengalihkan ke halaman login...');
                     setTimeout(() => {
                         window.location.href = 'login.html';
                     }, 2000);
                 })
                 .catch((error) => {
-                    // Handle errors
+                    console.error('Registration error:', error);
                     let errorMessage = 'Terjadi kesalahan saat pendaftaran.';
                     
-                    switch (error.code || error.message) {
+                    switch (error.code) {
                         case 'auth/email-already-in-use':
-                            errorMessage = 'Email sudah terdaftar.';
+                            errorMessage = 'Email sudah digunakan.';
                             break;
                         case 'auth/invalid-email':
                             errorMessage = 'Format email tidak valid.';
                             break;
                         case 'auth/weak-password':
-                            errorMessage = 'Password terlalu lemah.';
+                            errorMessage = 'Password terlalu lemah (minimal 6 karakter).';
                             break;
-                        case 'NIM sudah terdaftar. Gunakan NIM lain.':
-                            errorMessage = error.message;
-                            break;
-                        default:
-                            errorMessage = error.message || 'Terjadi kesalahan. Silakan coba lagi.';
                     }
                     
                     showAlert(errorAlert, errorMessage);
-                    registerBtn.textContent = 'Daftar';
-                    registerBtn.disabled = false;
                 });
         });
 
