@@ -8,7 +8,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
     <style>
         * {
             margin: 0;
@@ -62,7 +61,7 @@
         }
 
         .logo-icon {
-            /* BACKGROUND KUNING DIHAPUS */
+            background: var(--gold);
             width: 50px;
             height: 50px;
             border-radius: 50%;
@@ -70,13 +69,6 @@
             align-items: center;
             justify-content: center;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            overflow: hidden;
-        }
-
-        .logo-icon img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
         }
 
         .logo i {
@@ -256,13 +248,6 @@
             justify-content: center;
             color: white;
             font-size: 5rem;
-            overflow: hidden;
-        }
-
-        .candidate-img img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
         }
 
         .candidate-info {
@@ -379,8 +364,6 @@
             border-radius: 10px;
             overflow: hidden;
             box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
-            max-height: 90vh;
-            overflow-y: auto;
         }
 
         .modal-header {
@@ -432,54 +415,6 @@
             font-size: 1.5rem;
             cursor: pointer;
             color: white;
-        }
-
-        /* Image Upload */
-        .image-upload-container {
-            margin-bottom: 1.5rem;
-        }
-
-        .image-preview {
-            width: 100%;
-            height: 200px;
-            background-color: #f5f5f5;
-            border: 2px dashed #ddd;
-            border-radius: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 10px;
-            overflow: hidden;
-        }
-
-        .image-preview img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-        }
-
-        .image-preview p {
-            color: #888;
-            text-align: center;
-        }
-
-        .upload-btn {
-            display: inline-block;
-            background: var(--light-maroon);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            text-align: center;
-            transition: background 0.3s;
-        }
-
-        .upload-btn:hover {
-            background: var(--maroon);
-        }
-
-        #candidateImage {
-            display: none;
         }
 
         /* Footer */
@@ -584,8 +519,7 @@
         <div class="container header-content">
             <div class="logo">
                 <div class="logo-icon">
-                    <!-- Logo PNG bisa diganti dengan URL gambar PNG Anda -->
-                    <img src="picture/imm.png" alt="Logo IMM" id="logoImage">
+                    <img src="picture/imm.png" alt="Logo IMM" style="width:50px; height:50px; border-radius:50%;">
                 </div>
                 <div class="logo-text">
                     <h1>Pemilihan Formatur IMM JPMIPA</h1>
@@ -669,14 +603,6 @@
                 <span class="close">&times;</span>
             </div>
             <div class="modal-body">
-                <div class="image-upload-container">
-                    <label>Foto Kandidat</label>
-                    <div class="image-preview" id="imagePreview">
-                        <p>Belum ada gambar yang dipilih</p>
-                    </div>
-                    <label for="candidateImage" class="upload-btn">Pilih Gambar</label>
-                    <input type="file" id="candidateImage" accept="image/*">
-                </div>
                 <div class="form-group">
                     <label for="candidateName">Nama Kandidat</label>
                     <input type="text" id="candidateName" placeholder="Masukkan nama kandidat">
@@ -745,7 +671,6 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
-        const storage = firebase.storage();
 
         // DOM Elements
         const submitVoteBtn = document.getElementById('submitVote');
@@ -768,16 +693,11 @@
         const voteOptionsContainer = document.getElementById('voteOptionsContainer');
         const adminCandidatesList = document.getElementById('adminCandidatesList');
         const resultsContainer = document.getElementById('resultsContainer');
-        
-        // New elements for image upload
-        const candidateImageInput = document.getElementById('candidateImage');
-        const imagePreview = document.getElementById('imagePreview');
 
         // State variables
         let selectedCandidate = null;
         let isAdmin = false;
         let editingCandidateId = null;
-        let candidateImageFile = null;
 
         // Mobile menu toggle
         mobileMenuBtn.addEventListener('click', () => {
@@ -919,15 +839,9 @@
             
             const candidateCard = document.createElement('div');
             candidateCard.className = 'candidate-card';
-            
-            // Gunakan gambar jika ada, jika tidak gunakan placeholder
-            const imageHTML = candidate.imageUrl 
-                ? `<img src="${candidate.imageUrl}" alt="${candidate.name}">`
-                : `<i class="fas fa-user"></i>`;
-            
             candidateCard.innerHTML = `
                 <div class="candidate-img">
-                    ${imageHTML}
+                    <i class="fas fa-user"></i>
                 </div>
                 <div class="candidate-info">
                     <h3>${candidate.name}</h3>
@@ -945,14 +859,8 @@
             const voteOption = document.createElement('div');
             voteOption.className = 'vote-option';
             voteOption.setAttribute('data-candidate', candidate.id);
-            
-            // Gunakan gambar jika ada, jika tidak gunakan icon
-            const imageHTML = candidate.imageUrl 
-                ? `<img src="${candidate.imageUrl}" alt="${candidate.name}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 0.5rem;">`
-                : `<i class="fas fa-user"></i>`;
-            
             voteOption.innerHTML = `
-                ${imageHTML}
+                <i class="fas fa-user"></i>
                 <h3>${candidate.name}</h3>
                 <p>${candidate.program}</p>
             `;
@@ -975,15 +883,9 @@
         function renderAdminCandidateCard(candidate) {
             const adminCard = document.createElement('div');
             adminCard.className = 'admin-candidate-card';
-            
-            // Gunakan gambar jika ada, jika tidak gunakan placeholder
-            const imageHTML = candidate.imageUrl 
-                ? `<img src="${candidate.imageUrl}" alt="${candidate.name}">`
-                : `<i class="fas fa-user"></i>`;
-            
             adminCard.innerHTML = `
                 <div class="candidate-img">
-                    ${imageHTML}
+                    <i class="fas fa-user"></i>
                 </div>
                 <div class="candidate-info">
                     <h3>${candidate.name}</h3>
@@ -1016,15 +918,6 @@
             document.getElementById('candidateProgram').value = candidate.program;
             document.getElementById('candidateVision').value = candidate.vision;
             document.getElementById('candidateMission').value = candidate.mission;
-            
-            // Set image preview
-            if (candidate.imageUrl) {
-                imagePreview.innerHTML = `<img src="${candidate.imageUrl}" alt="Preview">`;
-            } else {
-                imagePreview.innerHTML = '<p>Belum ada gambar yang dipilih</p>';
-            }
-            
-            candidateImageFile = null;
             candidateModal.style.display = 'flex';
         }
 
@@ -1045,22 +938,6 @@
                         alert('Terjadi kesalahan saat menghapus kandidat');
                     });
             }
-        }
-
-        // Upload image to Firebase Storage
-        function uploadImage(file, candidateId) {
-            return new Promise((resolve, reject) => {
-                const storageRef = storage.ref();
-                const imageRef = storageRef.child(`candidates/${candidateId}/${file.name}`);
-                
-                imageRef.put(file).then((snapshot) => {
-                    snapshot.ref.getDownloadURL().then((downloadURL) => {
-                        resolve(downloadURL);
-                    });
-                }).catch((error) => {
-                    reject(error);
-                });
-            });
         }
 
         // Show voting results
@@ -1141,21 +1018,6 @@
             }
         });
 
-        // Image upload handling
-        candidateImageInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                candidateImageFile = file;
-                const reader = new FileReader();
-                
-                reader.onload = (e) => {
-                    imagePreview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
-                };
-                
-                reader.readAsDataURL(file);
-            }
-        });
-
         addCandidateBtn.addEventListener('click', () => {
             // Check if user is admin
             if (!isAdmin) {
@@ -1169,8 +1031,6 @@
             document.getElementById('candidateProgram').value = '';
             document.getElementById('candidateVision').value = '';
             document.getElementById('candidateMission').value = '';
-            imagePreview.innerHTML = '<p>Belum ada gambar yang dipilih</p>';
-            candidateImageFile = null;
             candidateModal.style.display = 'flex';
         });
 
@@ -1203,96 +1063,39 @@
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
             
-            // Function to save candidate data
-            const saveCandidateData = (imageUrl = null) => {
-                if (imageUrl) {
-                    candidateData.imageUrl = imageUrl;
-                }
-                
-                if (editingCandidateId) {
-                    // Update existing candidate
-                    db.collection('candidates').doc(editingCandidateId).update(candidateData)
-                        .then(() => {
-                            alert('Kandidat berhasil diperbarui');
-                            candidateModal.style.display = 'none';
-                            // Reload both views
-                            loadCandidates();
-                            if (isAdmin) {
-                                loadAdminCandidates();
-                            }
-                            editingCandidateId = null;
-                        })
-                        .catch((error) => {
-                            console.error("Error updating candidate: ", error);
-                            alert('Terjadi kesalahan saat memperbarui kandidat');
-                        });
-                } else {
-                    // Add new candidate
-                    db.collection('candidates').add(candidateData)
-                        .then((docRef) => {
-                            // If there's an image, upload it and update the candidate with the image URL
-                            if (candidateImageFile) {
-                                uploadImage(candidateImageFile, docRef.id)
-                                    .then((downloadURL) => {
-                                        return db.collection('candidates').doc(docRef.id).update({
-                                            imageUrl: downloadURL
-                                        });
-                                    })
-                                    .then(() => {
-                                        alert('Kandidat berhasil ditambahkan');
-                                        candidateModal.style.display = 'none';
-                                        // Reload both views
-                                        loadCandidates();
-                                        if (isAdmin) {
-                                            loadAdminCandidates();
-                                        }
-                                    })
-                                    .catch((error) => {
-                                        console.error("Error uploading image: ", error);
-                                        alert('Kandidat berhasil ditambahkan tetapi gambar gagal diupload');
-                                        candidateModal.style.display = 'none';
-                                        loadCandidates();
-                                        if (isAdmin) {
-                                            loadAdminCandidates();
-                                        }
-                                    });
-                            } else {
-                                alert('Kandidat berhasil ditambahkan');
-                                candidateModal.style.display = 'none';
-                                // Reload both views
-                                loadCandidates();
-                                if (isAdmin) {
-                                    loadAdminCandidates();
-                                }
-                            }
-                        })
-                        .catch((error) => {
-                            console.error("Error adding candidate: ", error);
-                            alert('Terjadi kesalahan saat menambahkan kandidat');
-                        });
-                }
-            };
-            
-            // If editing and no new image selected, save without changing image
-            if (editingCandidateId && !candidateImageFile) {
-                saveCandidateData();
-            } 
-            // If there's an image to upload
-            else if (candidateImageFile) {
-                const candidateId = editingCandidateId || Date.now().toString();
-                uploadImage(candidateImageFile, candidateId)
-                    .then((downloadURL) => {
-                        saveCandidateData(downloadURL);
+            if (editingCandidateId) {
+                // Update existing candidate
+                db.collection('candidates').doc(editingCandidateId).update(candidateData)
+                    .then(() => {
+                        alert('Kandidat berhasil diperbarui');
+                        candidateModal.style.display = 'none';
+                        // Reload both views
+                        loadCandidates();
+                        if (isAdmin) {
+                            loadAdminCandidates();
+                        }
+                        editingCandidateId = null;
                     })
                     .catch((error) => {
-                        console.error("Error uploading image: ", error);
-                        alert('Gagal mengupload gambar. Kandidat akan disimpan tanpa gambar.');
-                        saveCandidateData();
+                        console.error("Error updating candidate: ", error);
+                        alert('Terjadi kesalahan saat memperbarui kandidat');
                     });
-            } 
-            // If no image and creating new candidate
-            else {
-                saveCandidateData();
+            } else {
+                // Add new candidate
+                db.collection('candidates').add(candidateData)
+                    .then(() => {
+                        alert('Kandidat berhasil ditambahkan');
+                        candidateModal.style.display = 'none';
+                        // Reload both views
+                        loadCandidates();
+                        if (isAdmin) {
+                            loadAdminCandidates();
+                        }
+                    })
+                    .catch((error) => {
+                        console.error("Error adding candidate: ", error);
+                        alert('Terjadi kesalahan saat menambahkan kandidat');
+                    });
             }
         });
 
