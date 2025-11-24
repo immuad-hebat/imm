@@ -8,6 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
     <style>
         * {
             margin: 0;
@@ -509,12 +510,59 @@
                 flex-direction: column;
                 gap: 1rem;
             }
+            
+            /*css foto */
+            .photo-preview {
+                max-width: 200px;
+                max-height: 200px;
+                border-radius: 10px;
+                margin: 10px auto;
+                display: block;
+                border: 2px solid var(--maroon);
+            }
+            
+            .candidate-img {
+                height: 250px;
+                background-color: var(--light-maroon);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: 5rem;
+                overflow: hidden;
+            }
+            
+            .candidate-img img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+            
+            .vote-option-img {
+                width: 80px;
+                height: 80px;
+                border-radius: 50%;
+                overflow: hidden;
+                margin: 0 auto 10px;
+                background: #f0f0f0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 2px solid var(--maroon);
+            }
+            
+            .vote-option-img img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
         }
     </style>
 </head>
 <body>
     <!-- Header -->
     <header>
+        
         <div class="container header-content">
             <div class="logo">
                 <div class="logo-icon">
@@ -611,6 +659,13 @@
                     <input type="text" id="candidateProgram" placeholder="Contoh: Teknik Informatika - Semester 7">
                 </div>
                 <div class="form-group">
+                    <label for="candidatePhoto">Foto Kandidat</label>
+                    <button type="button" class="btn btn-secondary" id="uploadPhotoBtn" style="width: 100%; margin-bottom: 10px;">
+                        <i class="fas fa-cloud-upload-alt"></i> Upload Foto
+                    </button>
+                    <div id="photoPreview" style="margin-top: 10px; text-align: center;"></div>
+                </div>
+                <div class="form-group">
                     <label for="candidateVision">Visi</label>
                     <textarea id="candidateVision" placeholder="Masukkan visi kandidat"></textarea>
                 </div>
@@ -654,546 +709,678 @@
         </div>
     </footer>
 
-    <script>
-        // Firebase Configuration
-        const firebaseConfig = {
-          apiKey: "AIzaSyDhJj0hNeDIsD3jxnOPxHWyvvfXwNUxE8I",
-          authDomain: "immuad-1d18a.firebaseapp.com",
-          projectId: "immuad-1d18a",
-          storageBucket: "immuad-1d18a.firebasestorage.app",
-          messagingSenderId: "558116990905",
-          appId: "1:558116990905:web:27d7df924f28a089dbd068",
-          measurementId: "G-0YBW40V890"
-        };
+   <script>
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDhJj0hNeDIsD3jxnOPxHWyvvfXwNUxE8I",
+      authDomain: "immuad-1d18a.firebaseapp.com",
+      projectId: "immuad-1d18a",
+      storageBucket: "immuad-1d18a.firebasestorage.app",
+      messagingSenderId: "558116990905",
+      appId: "1:558116990905:web:27d7df924f28a089dbd068",
+      measurementId: "G-0YBW40V890"
+    };
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-        // DOM Elements
-        const submitVoteBtn = document.getElementById('submitVote');
-        const voteNowBtn = document.getElementById('voteNowBtn');
-        const adminSection = document.getElementById('adminSection');
-        const addCandidateBtn = document.getElementById('addCandidateBtn');
-        const viewResultsBtn = document.getElementById('viewResultsBtn');
-        const candidateModal = document.getElementById('candidateModal');
-        const resultsModal = document.getElementById('resultsModal');
-        const saveCandidateBtn = document.getElementById('saveCandidateBtn');
-        const userInfo = document.getElementById('userInfo');
-        const userName = document.getElementById('userName');
-        const adminLink = document.getElementById('adminLink');
-        const logoutLink = document.getElementById('logoutLink');
-        const loginLink = document.getElementById('loginLink');
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const mainNav = document.getElementById('mainNav');
-        
-        const candidatesContainer = document.getElementById('candidatesContainer');
-        const voteOptionsContainer = document.getElementById('voteOptionsContainer');
-        const adminCandidatesList = document.getElementById('adminCandidatesList');
-        const resultsContainer = document.getElementById('resultsContainer');
+    // Cloudinary Configuration
+    const cloudinaryConfig = {
+        cloudName: 'dgysqnzx2',
+        uploadPreset: 'imm_preset' // Pastikan Anda sudah buat preset di Cloudinary dashboard
+    };
 
-        // State variables
-        let selectedCandidate = null;
-        let isAdmin = false;
-        let editingCandidateId = null;
+    // DOM Elements
+    const submitVoteBtn = document.getElementById('submitVote');
+    const voteNowBtn = document.getElementById('voteNowBtn');
+    const adminSection = document.getElementById('adminSection');
+    const addCandidateBtn = document.getElementById('addCandidateBtn');
+    const viewResultsBtn = document.getElementById('viewResultsBtn');
+    const candidateModal = document.getElementById('candidateModal');
+    const resultsModal = document.getElementById('resultsModal');
+    const saveCandidateBtn = document.getElementById('saveCandidateBtn');
+    const userInfo = document.getElementById('userInfo');
+    const userName = document.getElementById('userName');
+    const adminLink = document.getElementById('adminLink');
+    const logoutLink = document.getElementById('logoutLink');
+    const loginLink = document.getElementById('loginLink');
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mainNav = document.getElementById('mainNav');
+    const uploadPhotoBtn = document.getElementById('uploadPhotoBtn');
+    const photoPreview = document.getElementById('photoPreview');
+    
+    const candidatesContainer = document.getElementById('candidatesContainer');
+    const voteOptionsContainer = document.getElementById('voteOptionsContainer');
+    const adminCandidatesList = document.getElementById('adminCandidatesList');
+    const resultsContainer = document.getElementById('resultsContainer');
 
-        // Mobile menu toggle
-        mobileMenuBtn.addEventListener('click', () => {
-            mainNav.classList.toggle('active');
+    // State variables
+    let selectedCandidate = null;
+    let isAdmin = false;
+    let editingCandidateId = null;
+    let currentPhotoUrl = '';
+    let uploadWidget = null;
+
+    // Mobile menu toggle
+    mobileMenuBtn.addEventListener('click', () => {
+        mainNav.classList.toggle('active');
+    });
+
+    // Update active nav link
+    function updateActiveNavLink(activeLinkId) {
+        document.querySelectorAll('nav a').forEach(link => {
+            link.classList.remove('active');
         });
+        document.getElementById(activeLinkId).classList.add('active');
+    }
 
-        // Update active nav link
-        function updateActiveNavLink(activeLinkId) {
-            document.querySelectorAll('nav a').forEach(link => {
-                link.classList.remove('active');
-            });
-            document.getElementById(activeLinkId).classList.add('active');
-        }
-
-        // Check if user is already logged in
-        function checkAuthState() {
-            auth.onAuthStateChanged((user) => {
-                if (user) {
-                    // User is signed in
-                    getUserData(user.uid).then(userData => {
-                        if (userData) {
-                            updateUIForLoggedInUser(userData);
-                            // Set isAdmin berdasarkan data user
-                            isAdmin = userData.isAdmin || false;
-                            
-                            // Jika admin, load candidates untuk admin juga
-                            if (isAdmin) {
-                                loadAdminCandidates();
-                            }
-                        }
-                    });
-                } else {
-                    // User is signed out
-                    console.log('User is signed out');
-                    // Reset UI
-                    loginLink.style.display = 'block';
-                    userInfo.style.display = 'none';
-                    logoutLink.style.display = 'none';
-                    adminLink.style.display = 'none';
-                    adminSection.style.display = 'none';
-                    isAdmin = false;
-                }
-            });
-            
-            loadCandidates();
-        }
-
-        // Get user data from Firestore
-        function getUserData(uid) {
-            return db.collection('users').doc(uid).get()
-                .then((doc) => {
-                    if (doc.exists) {
-                        return doc.data();
-                    } else {
-                        console.log("No such document!");
-                        return null;
-                    }
-                })
-                .catch((error) => {
-                    console.error("Error getting user data:", error);
-                    return null;
-                });
-        }
-
-        // Update UI for logged in user
-        function updateUIForLoggedInUser(user) {
-            loginLink.style.display = 'none';
-            userInfo.style.display = 'flex';
-            userName.textContent = user.name;
-            logoutLink.style.display = 'block';
-            
-            // Show admin link if user is admin
-            if (user.isAdmin) {
-                adminLink.style.display = 'block';
-                isAdmin = true;
-            }
-        }
-
-        // Load candidates from Firestore untuk public view
-        function loadCandidates() {
-            db.collection('candidates').orderBy('createdAt', 'asc').get()
-                .then((querySnapshot) => {
-                    candidatesContainer.innerHTML = '';
-                    voteOptionsContainer.innerHTML = '';
-                    
-                    if (querySnapshot.empty) {
-                        candidatesContainer.innerHTML = '<p>Belum ada kandidat yang terdaftar.</p>';
-                        voteOptionsContainer.innerHTML = '<p>Belum ada kandidat yang terdaftar.</p>';
-                        return;
-                    }
-                    
-                    querySnapshot.forEach((doc) => {
-                        const candidate = doc.data();
-                        candidate.id = doc.id;
+    // Check if user is already logged in
+    function checkAuthState() {
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // User is signed in
+                getUserData(user.uid).then(userData => {
+                    if (userData) {
+                        updateUIForLoggedInUser(userData);
+                        // Set isAdmin berdasarkan data user
+                        isAdmin = userData.isAdmin || false;
                         
-                        // Render candidate cards for public view
-                        renderCandidateCard(candidate);
-                        
-                        // Render vote options
-                        renderVoteOption(candidate);
-                    });
-                })
-                .catch((error) => {
-                    console.error("Error loading candidates: ", error);
-                    candidatesContainer.innerHTML = '<p>Error loading candidates.</p>';
-                });
-        }
-
-        // Load candidates untuk admin view
-        function loadAdminCandidates() {
-            db.collection('candidates').orderBy('createdAt', 'asc').get()
-                .then((querySnapshot) => {
-                    adminCandidatesList.innerHTML = '';
-                    
-                    if (querySnapshot.empty) {
-                        adminCandidatesList.innerHTML = '<p>Belum ada kandidat yang terdaftar.</p>';
-                        return;
-                    }
-                    
-                    querySnapshot.forEach((doc) => {
-                        const candidate = doc.data();
-                        candidate.id = doc.id;
-                        
-                        // Render admin candidate cards
-                        renderAdminCandidateCard(candidate);
-                    });
-                })
-                .catch((error) => {
-                    console.error("Error loading admin candidates: ", error);
-                    adminCandidatesList.innerHTML = '<p>Error loading candidates.</p>';
-                });
-        }
-
-        // Render candidate card for public view
-        function renderCandidateCard(candidate) {
-            const missionItems = candidate.mission.split('\n').map(item => 
-                `<li>${item}</li>`
-            ).join('');
-            
-            const candidateCard = document.createElement('div');
-            candidateCard.className = 'candidate-card';
-            candidateCard.innerHTML = `
-                <div class="candidate-img">
-                    <i class="fas fa-user"></i>
-                </div>
-                <div class="candidate-info">
-                    <h3>${candidate.name}</h3>
-                    <p>${candidate.program}</p>
-                    <p><strong>Visi:</strong> ${candidate.vision}</p>
-                    <p><strong>Misi:</strong></p>
-                    <ul>${missionItems}</ul>
-                </div>
-            `;
-            candidatesContainer.appendChild(candidateCard);
-        }
-
-        // Render vote option
-        function renderVoteOption(candidate) {
-            const voteOption = document.createElement('div');
-            voteOption.className = 'vote-option';
-            voteOption.setAttribute('data-candidate', candidate.id);
-            voteOption.innerHTML = `
-                <i class="fas fa-user"></i>
-                <h3>${candidate.name}</h3>
-                <p>${candidate.program}</p>
-            `;
-            
-            voteOption.addEventListener('click', () => {
-                // Remove selected class from all options
-                document.querySelectorAll('.vote-option').forEach(opt => opt.classList.remove('selected'));
-                
-                // Add selected class to clicked option
-                voteOption.classList.add('selected');
-                
-                // Set selected candidate
-                selectedCandidate = candidate.id;
-            });
-            
-            voteOptionsContainer.appendChild(voteOption);
-        }
-
-        // Render admin candidate card
-        function renderAdminCandidateCard(candidate) {
-            const adminCard = document.createElement('div');
-            adminCard.className = 'admin-candidate-card';
-            adminCard.innerHTML = `
-                <div class="candidate-img">
-                    <i class="fas fa-user"></i>
-                </div>
-                <div class="candidate-info">
-                    <h3>${candidate.name}</h3>
-                    <p>${candidate.program}</p>
-                    <p><strong>Visi:</strong> ${candidate.vision}</p>
-                </div>
-                <div class="admin-candidate-actions">
-                    <button class="btn btn-secondary edit-candidate" data-id="${candidate.id}">Edit</button>
-                    <button class="btn btn-danger delete-candidate" data-id="${candidate.id}">Hapus</button>
-                </div>
-            `;
-            
-            adminCandidatesList.appendChild(adminCard);
-            
-            // Add event listeners for edit and delete buttons
-            adminCard.querySelector('.edit-candidate').addEventListener('click', () => {
-                editCandidate(candidate);
-            });
-            
-            adminCard.querySelector('.delete-candidate').addEventListener('click', () => {
-                deleteCandidate(candidate.id);
-            });
-        }
-
-        // Edit candidate
-        function editCandidate(candidate) {
-            editingCandidateId = candidate.id;
-            document.getElementById('candidateModalTitle').textContent = 'Edit Kandidat';
-            document.getElementById('candidateName').value = candidate.name;
-            document.getElementById('candidateProgram').value = candidate.program;
-            document.getElementById('candidateVision').value = candidate.vision;
-            document.getElementById('candidateMission').value = candidate.mission;
-            candidateModal.style.display = 'flex';
-        }
-
-        // Delete candidate
-        function deleteCandidate(candidateId) {
-            if (confirm('Apakah Anda yakin ingin menghapus kandidat ini?')) {
-                db.collection('candidates').doc(candidateId).delete()
-                    .then(() => {
-                        alert('Kandidat berhasil dihapus');
-                        // Reload both public and admin views
-                        loadCandidates();
+                        // Jika admin, load candidates untuk admin juga
                         if (isAdmin) {
                             loadAdminCandidates();
                         }
-                    })
-                    .catch((error) => {
-                        console.error("Error deleting candidate: ", error);
-                        alert('Terjadi kesalahan saat menghapus kandidat');
-                    });
-            }
-        }
-
-        // Show voting results
-        function showResults() {
-            resultsContainer.innerHTML = '<p>Memuat hasil...</p>';
-            resultsModal.style.display = 'flex';
-            
-            // Get all votes
-            db.collection('votes').get()
-                .then((querySnapshot) => {
-                    const votes = {};
-                    let totalVotes = 0;
-                    
-                    // Initialize vote counts
-                    db.collection('candidates').get()
-                        .then((candidatesSnapshot) => {
-                            candidatesSnapshot.forEach((doc) => {
-                                votes[doc.id] = {
-                                    name: doc.data().name,
-                                    count: 0
-                                };
-                            });
-                            
-                            // Count votes
-                            querySnapshot.forEach((doc) => {
-                                const vote = doc.data();
-                                if (votes[vote.candidate]) {
-                                    votes[vote.candidate].count++;
-                                    totalVotes++;
-                                }
-                            });
-                            
-                            // Display results
-                            let resultsHTML = `<p><strong>Total Suara: ${totalVotes}</strong></p>`;
-                            
-                            Object.keys(votes).forEach(candidateId => {
-                                const candidate = votes[candidateId];
-                                const percentage = totalVotes > 0 ? 
-                                    ((candidate.count / totalVotes) * 100).toFixed(2) : 0;
-                                
-                                resultsHTML += `
-                                    <div style="margin-bottom: 1rem; padding: 1rem; background: #f9f9f9; border-radius: 5px;">
-                                        <h3>${candidate.name}</h3>
-                                        <p>Suara: ${candidate.count} (${percentage}%)</p>
-                                        <div style="background: #e0e0e0; height: 20px; border-radius: 10px; margin-top: 5px;">
-                                            <div style="background: var(--maroon); height: 100%; width: ${percentage}%; border-radius: 10px;"></div>
-                                        </div>
-                                    </div>
-                                `;
-                            });
-                            
-                            resultsContainer.innerHTML = resultsHTML;
-                        });
-                })
-                .catch((error) => {
-                    console.error("Error loading results: ", error);
-                    resultsContainer.innerHTML = '<p>Terjadi kesalahan saat memuat hasil.</p>';
+                    }
                 });
-        }
-
-        // Event Listeners
-        const closeModal = document.querySelectorAll('.close');
-        closeModal.forEach(closeBtn => {
-            closeBtn.addEventListener('click', () => {
-                candidateModal.style.display = 'none';
-                resultsModal.style.display = 'none';
-                editingCandidateId = null;
-            });
-        });
-
-        window.addEventListener('click', (e) => {
-            if (e.target === candidateModal) {
-                candidateModal.style.display = 'none';
-                editingCandidateId = null;
-            }
-            if (e.target === resultsModal) {
-                resultsModal.style.display = 'none';
-            }
-        });
-
-        addCandidateBtn.addEventListener('click', () => {
-            // Check if user is admin
-            if (!isAdmin) {
-                alert('Hanya admin yang dapat menambah kandidat!');
-                return;
-            }
-            
-            editingCandidateId = null;
-            document.getElementById('candidateModalTitle').textContent = 'Tambah Kandidat';
-            document.getElementById('candidateName').value = '';
-            document.getElementById('candidateProgram').value = '';
-            document.getElementById('candidateVision').value = '';
-            document.getElementById('candidateMission').value = '';
-            candidateModal.style.display = 'flex';
-        });
-
-        viewResultsBtn.addEventListener('click', () => {
-            showResults();
-        });
-
-        saveCandidateBtn.addEventListener('click', () => {
-            // Check if user is admin
-            if (!isAdmin) {
-                alert('Hanya admin yang dapat menambah atau mengedit kandidat!');
-                return;
-            }
-            
-            const name = document.getElementById('candidateName').value;
-            const program = document.getElementById('candidateProgram').value;
-            const vision = document.getElementById('candidateVision').value;
-            const mission = document.getElementById('candidateMission').value;
-            
-            if (!name || !program || !vision || !mission) {
-                alert('Silakan isi semua data kandidat!');
-                return;
-            }
-            
-            const candidateData = {
-                name,
-                program,
-                vision,
-                mission,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            
-            if (editingCandidateId) {
-                // Update existing candidate
-                db.collection('candidates').doc(editingCandidateId).update(candidateData)
-                    .then(() => {
-                        alert('Kandidat berhasil diperbarui');
-                        candidateModal.style.display = 'none';
-                        // Reload both views
-                        loadCandidates();
-                        if (isAdmin) {
-                            loadAdminCandidates();
-                        }
-                        editingCandidateId = null;
-                    })
-                    .catch((error) => {
-                        console.error("Error updating candidate: ", error);
-                        alert('Terjadi kesalahan saat memperbarui kandidat');
-                    });
             } else {
-                // Add new candidate
-                db.collection('candidates').add(candidateData)
-                    .then(() => {
-                        alert('Kandidat berhasil ditambahkan');
-                        candidateModal.style.display = 'none';
-                        // Reload both views
-                        loadCandidates();
-                        if (isAdmin) {
-                            loadAdminCandidates();
-                        }
-                    })
-                    .catch((error) => {
-                        console.error("Error adding candidate: ", error);
-                        alert('Terjadi kesalahan saat menambahkan kandidat');
-                    });
-            }
-        });
-
-        submitVoteBtn.addEventListener('click', () => {
-            if (!selectedCandidate) {
-                alert('Silakan pilih kandidat terlebih dahulu!');
-                return;
-            }
-            
-            const user = auth.currentUser;
-            if (!user) {
-                alert('Anda harus login terlebih dahulu untuk melakukan voting!');
-                window.location.href = 'login.html';
-                return;
-            }
-            
-            // Check if user has already voted
-            db.collection('votes').where('userId', '==', user.uid).get()
-                .then((querySnapshot) => {
-                    if (!querySnapshot.empty) {
-                        alert('Anda sudah melakukan voting sebelumnya!');
-                        return;
-                    }
-                    
-                    // Save vote to Firestore
-                    return db.collection('votes').add({
-                        candidate: selectedCandidate,
-                        userId: user.uid,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                })
-                .then(() => {
-                    alert('Terima kasih! Suara Anda telah tercatat.');
-                    // Reset selection
-                    document.querySelectorAll('.vote-option').forEach(opt => opt.classList.remove('selected'));
-                    selectedCandidate = null;
-                })
-                .catch(error => {
-                    console.error('Error saving vote: ', error);
-                    alert('Terjadi kesalahan. Silakan coba lagi.');
-                });
-        });
-
-        voteNowBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            document.getElementById('voteLink').click();
-        });
-
-        // Event listener untuk admin link
-        adminLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            // Sembunyikan semua section
-            document.querySelector('.hero').style.display = 'none';
-            document.querySelector('.candidates').style.display = 'none';
-            document.querySelector('.vote-section').style.display = 'none';
-            
-            // Tampilkan admin section
-            adminSection.style.display = 'block';
-            
-            // Update active nav link
-            updateActiveNavLink('adminLink');
-            
-            // Load candidates untuk admin jika belum diload
-            if (isAdmin) {
-                loadAdminCandidates();
-            }
-            
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-
-        logoutLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            auth.signOut().then(() => {
-                // Sign-out successful.
+                // User is signed out
+                console.log('User is signed out');
+                // Reset UI
                 loginLink.style.display = 'block';
                 userInfo.style.display = 'none';
                 logoutLink.style.display = 'none';
                 adminLink.style.display = 'none';
                 adminSection.style.display = 'none';
                 isAdmin = false;
-                
-                // Show hidden sections
-                document.querySelector('.hero').style.display = 'block';
-                document.querySelector('.candidates').style.display = 'grid';
-                document.querySelector('.vote-section').style.display = 'block';
-                
-                // Update active nav link
-                updateActiveNavLink('homeLink');
-                
-                alert('Logout berhasil!');
-            }).catch((error) => {
-                console.error('Error signing out:', error);
-            });
+            }
         });
+        
+        loadCandidates();
+    }
 
-        // Navigation
-        document.getElementById('homeLink').addEventListener('click', (e) => {
-            e.preventDefault();
+    // Get user data from Firestore
+    function getUserData(uid) {
+        return db.collection('users').doc(uid).get()
+            .then((doc) => {
+                if (doc.exists) {
+                    return doc.data();
+                } else {
+                    console.log("No such document!");
+                    return null;
+                }
+            })
+            .catch((error) => {
+                console.error("Error getting user data:", error);
+                return null;
+            });
+    }
+
+    // Update UI for logged in user
+    function updateUIForLoggedInUser(user) {
+        loginLink.style.display = 'none';
+        userInfo.style.display = 'flex';
+        userName.textContent = user.name;
+        logoutLink.style.display = 'block';
+        
+        // Show admin link if user is admin
+        if (user.isAdmin) {
+            adminLink.style.display = 'block';
+            isAdmin = true;
+        }
+    }
+
+    // Load candidates from Firestore untuk public view
+    function loadCandidates() {
+        db.collection('candidates').orderBy('createdAt', 'asc').get()
+            .then((querySnapshot) => {
+                candidatesContainer.innerHTML = '';
+                voteOptionsContainer.innerHTML = '';
+                
+                if (querySnapshot.empty) {
+                    candidatesContainer.innerHTML = '<p>Belum ada kandidat yang terdaftar.</p>';
+                    voteOptionsContainer.innerHTML = '<p>Belum ada kandidat yang terdaftar.</p>';
+                    return;
+                }
+                
+                querySnapshot.forEach((doc) => {
+                    const candidate = doc.data();
+                    candidate.id = doc.id;
+                    
+                    // Render candidate cards for public view
+                    renderCandidateCard(candidate);
+                    
+                    // Render vote options
+                    renderVoteOption(candidate);
+                });
+            })
+            .catch((error) => {
+                console.error("Error loading candidates: ", error);
+                candidatesContainer.innerHTML = '<p>Error loading candidates.</p>';
+            });
+    }
+
+    // Load candidates untuk admin view
+    function loadAdminCandidates() {
+        db.collection('candidates').orderBy('createdAt', 'asc').get()
+            .then((querySnapshot) => {
+                adminCandidatesList.innerHTML = '';
+                
+                if (querySnapshot.empty) {
+                    adminCandidatesList.innerHTML = '<p>Belum ada kandidat yang terdaftar.</p>';
+                    return;
+                }
+                
+                querySnapshot.forEach((doc) => {
+                    const candidate = doc.data();
+                    candidate.id = doc.id;
+                    
+                    // Render admin candidate cards
+                    renderAdminCandidateCard(candidate);
+                });
+            })
+            .catch((error) => {
+                console.error("Error loading admin candidates: ", error);
+                adminCandidatesList.innerHTML = '<p>Error loading candidates.</p>';
+            });
+    }
+
+    // Fungsi untuk inisialisasi Cloudinary upload widget
+    function initializeCloudinaryWidget() {
+        if (!uploadWidget) {
+            uploadWidget = cloudinary.createUploadWidget({
+                cloudName: cloudinaryConfig.cloudName,
+                uploadPreset: cloudinaryConfig.uploadPreset,
+                sources: ['local', 'camera'],
+                multiple: false,
+                maxFileSize: 5000000, // 5MB
+                clientAllowedFormats: ['jpg', 'jpeg', 'png', 'gif'],
+                maxImageWidth: 800,
+                maxImageHeight: 800,
+                cropping: true,
+                croppingAspectRatio: 1,
+                showAdvancedOptions: false,
+                styles: {
+                    palette: {
+                        window: "#FFFFFF",
+                        sourceBg: "#F4F4F5",
+                        windowBorder: "#90a0b3",
+                        tabIcon: "#800000",
+                        inactiveTabIcon: "#69778A",
+                        menuIcons: "#800000",
+                        link: "#800000",
+                        action: "#800000",
+                        inProgress: "#800000",
+                        complete: "#20b832",
+                        error: "#c43737",
+                        textDark: "#000000",
+                        textLight: "#FFFFFF"
+                    }
+                }
+            }, (error, result) => {
+                if (!error && result && result.event === "success") {
+                    console.log('Upload berhasil: ', result.info);
+                    currentPhotoUrl = result.info.secure_url;
+                    showPhotoPreview(currentPhotoUrl);
+                } else if (error) {
+                    console.error('Upload error: ', error);
+                    alert('Terjadi kesalahan saat upload foto: ' + error.message);
+                }
+            });
+        }
+        return uploadWidget;
+    }
+
+    // Fungsi untuk menampilkan preview foto
+    function showPhotoPreview(url) {
+        const previewContainer = document.getElementById('photoPreview');
+        previewContainer.innerHTML = `
+            <img src="${url}" alt="Preview Foto" class="photo-preview">
+            <p style="color: green; margin-top: 5px; font-size: 0.9rem;">
+                <i class="fas fa-check-circle"></i> Foto berhasil diupload
+            </p>
+            <button type="button" class="btn btn-danger" id="removePhotoBtn" style="margin-top: 5px; padding: 5px 10px; font-size: 0.8rem;">
+                <i class="fas fa-trash"></i> Hapus Foto
+            </button>
+        `;
+        
+        // Event listener untuk hapus foto
+        document.getElementById('removePhotoBtn').addEventListener('click', function() {
+            currentPhotoUrl = '';
+            previewContainer.innerHTML = '';
+        });
+    }
+
+    // Render candidate card for public view - MODIFIED
+    function renderCandidateCard(candidate) {
+        const missionItems = candidate.mission.split('\n').map(item => 
+            `<li>${item}</li>`
+        ).join('');
+        
+        const candidateCard = document.createElement('div');
+        candidateCard.className = 'candidate-card';
+        candidateCard.innerHTML = `
+            <div class="candidate-img">
+                ${candidate.photoUrl ? 
+                    `<img src="${candidate.photoUrl}" alt="${candidate.name}" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\\'fas fa-user\\'></i>'">` : 
+                    `<i class="fas fa-user"></i>`
+                }
+            </div>
+            <div class="candidate-info">
+                <h3>${candidate.name}</h3>
+                <p>${candidate.program}</p>
+                <p><strong>Visi:</strong> ${candidate.vision}</p>
+                <p><strong>Misi:</strong></p>
+                <ul>${missionItems}</ul>
+            </div>
+        `;
+        candidatesContainer.appendChild(candidateCard);
+    }
+
+    // Render vote option - MODIFIED
+    function renderVoteOption(candidate) {
+        const voteOption = document.createElement('div');
+        voteOption.className = 'vote-option';
+        voteOption.setAttribute('data-candidate', candidate.id);
+        voteOption.innerHTML = `
+            <div class="vote-option-img">
+                ${candidate.photoUrl ? 
+                    `<img src="${candidate.photoUrl}" alt="${candidate.name}" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\\'fas fa-user\\' style=\\'font-size: 2rem; color: #800000;\\'></i>'">` : 
+                    `<i class="fas fa-user" style="font-size: 2rem; color: #800000;"></i>`
+                }
+            </div>
+            <h3>${candidate.name}</h3>
+            <p>${candidate.program}</p>
+        `;
+        
+        voteOption.addEventListener('click', () => {
+            // Remove selected class from all options
+            document.querySelectorAll('.vote-option').forEach(opt => opt.classList.remove('selected'));
+            
+            // Add selected class to clicked option
+            voteOption.classList.add('selected');
+            
+            // Set selected candidate
+            selectedCandidate = candidate.id;
+        });
+        
+        voteOptionsContainer.appendChild(voteOption);
+    }
+
+    // Render admin candidate card - MODIFIED
+    function renderAdminCandidateCard(candidate) {
+        const adminCard = document.createElement('div');
+        adminCard.className = 'admin-candidate-card';
+        adminCard.innerHTML = `
+            <div class="candidate-img">
+                ${candidate.photoUrl ? 
+                    `<img src="${candidate.photoUrl}" alt="${candidate.name}" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\\'fas fa-user\\'></i>'">` : 
+                    `<i class="fas fa-user"></i>`
+                }
+            </div>
+            <div class="candidate-info">
+                <h3>${candidate.name}</h3>
+                <p>${candidate.program}</p>
+                <p><strong>Visi:</strong> ${candidate.vision}</p>
+            </div>
+            <div class="admin-candidate-actions">
+                <button class="btn btn-secondary edit-candidate" data-id="${candidate.id}">Edit</button>
+                <button class="btn btn-danger delete-candidate" data-id="${candidate.id}">Hapus</button>
+            </div>
+        `;
+        
+        adminCandidatesList.appendChild(adminCard);
+        
+        // Add event listeners for edit and delete buttons
+        adminCard.querySelector('.edit-candidate').addEventListener('click', () => {
+            editCandidate(candidate);
+        });
+        
+        adminCard.querySelector('.delete-candidate').addEventListener('click', () => {
+            deleteCandidate(candidate.id);
+        });
+    }
+
+    // Edit candidate - MODIFIED
+    function editCandidate(candidate) {
+        editingCandidateId = candidate.id;
+        currentPhotoUrl = candidate.photoUrl || '';
+        
+        document.getElementById('candidateModalTitle').textContent = 'Edit Kandidat';
+        document.getElementById('candidateName').value = candidate.name;
+        document.getElementById('candidateProgram').value = candidate.program;
+        document.getElementById('candidateVision').value = candidate.vision;
+        document.getElementById('candidateMission').value = candidate.mission;
+        
+        // Tampilkan preview foto jika ada
+        if (candidate.photoUrl) {
+            showPhotoPreview(candidate.photoUrl);
+        } else {
+            document.getElementById('photoPreview').innerHTML = '';
+        }
+        
+        candidateModal.style.display = 'flex';
+    }
+
+    // Delete candidate
+    function deleteCandidate(candidateId) {
+        if (confirm('Apakah Anda yakin ingin menghapus kandidat ini?')) {
+            db.collection('candidates').doc(candidateId).delete()
+                .then(() => {
+                    alert('Kandidat berhasil dihapus');
+                    // Reload both public and admin views
+                    loadCandidates();
+                    if (isAdmin) {
+                        loadAdminCandidates();
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error deleting candidate: ", error);
+                    alert('Terjadi kesalahan saat menghapus kandidat');
+                });
+        }
+    }
+
+    // Show voting results
+    function showResults() {
+        resultsContainer.innerHTML = '<p>Memuat hasil...</p>';
+        resultsModal.style.display = 'flex';
+        
+        // Get all votes
+        db.collection('votes').get()
+            .then((querySnapshot) => {
+                const votes = {};
+                let totalVotes = 0;
+                
+                // Initialize vote counts
+                db.collection('candidates').get()
+                    .then((candidatesSnapshot) => {
+                        candidatesSnapshot.forEach((doc) => {
+                            votes[doc.id] = {
+                                name: doc.data().name,
+                                count: 0
+                            };
+                        });
+                        
+                        // Count votes
+                        querySnapshot.forEach((doc) => {
+                            const vote = doc.data();
+                            if (votes[vote.candidate]) {
+                                votes[vote.candidate].count++;
+                                totalVotes++;
+                            }
+                        });
+                        
+                        // Display results
+                        let resultsHTML = `<p><strong>Total Suara: ${totalVotes}</strong></p>`;
+                        
+                        Object.keys(votes).forEach(candidateId => {
+                            const candidate = votes[candidateId];
+                            const percentage = totalVotes > 0 ? 
+                                ((candidate.count / totalVotes) * 100).toFixed(2) : 0;
+                            
+                            resultsHTML += `
+                                <div style="margin-bottom: 1rem; padding: 1rem; background: #f9f9f9; border-radius: 5px;">
+                                    <h3>${candidate.name}</h3>
+                                    <p>Suara: ${candidate.count} (${percentage}%)</p>
+                                    <div style="background: #e0e0e0; height: 20px; border-radius: 10px; margin-top: 5px;">
+                                        <div style="background: var(--maroon); height: 100%; width: ${percentage}%; border-radius: 10px;"></div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        resultsContainer.innerHTML = resultsHTML;
+                    });
+            })
+            .catch((error) => {
+                console.error("Error loading results: ", error);
+                resultsContainer.innerHTML = '<p>Terjadi kesalahan saat memuat hasil.</p>';
+            });
+    }
+
+    // Event Listeners
+    const closeModal = document.querySelectorAll('.close');
+    closeModal.forEach(closeBtn => {
+        closeBtn.addEventListener('click', () => {
+            candidateModal.style.display = 'none';
+            resultsModal.style.display = 'none';
+            editingCandidateId = null;
+            currentPhotoUrl = '';
+            document.getElementById('photoPreview').innerHTML = '';
+        });
+    });
+
+    window.addEventListener('click', (e) => {
+        if (e.target === candidateModal) {
+            candidateModal.style.display = 'none';
+            editingCandidateId = null;
+            currentPhotoUrl = '';
+            document.getElementById('photoPreview').innerHTML = '';
+        }
+        if (e.target === resultsModal) {
+            resultsModal.style.display = 'none';
+        }
+    });
+
+    // Event listener untuk upload photo button
+    document.getElementById('uploadPhotoBtn').addEventListener('click', function() {
+        const widget = initializeCloudinaryWidget();
+        widget.open();
+    });
+
+    addCandidateBtn.addEventListener('click', () => {
+        // Check if user is admin
+        if (!isAdmin) {
+            alert('Hanya admin yang dapat menambah kandidat!');
+            return;
+        }
+        
+        editingCandidateId = null;
+        currentPhotoUrl = '';
+        document.getElementById('candidateModalTitle').textContent = 'Tambah Kandidat';
+        document.getElementById('candidateName').value = '';
+        document.getElementById('candidateProgram').value = '';
+        document.getElementById('candidateVision').value = '';
+        document.getElementById('candidateMission').value = '';
+        document.getElementById('photoPreview').innerHTML = '';
+        candidateModal.style.display = 'flex';
+    });
+
+    viewResultsBtn.addEventListener('click', () => {
+        showResults();
+    });
+
+    saveCandidateBtn.addEventListener('click', () => {
+        // Check if user is admin
+        if (!isAdmin) {
+            alert('Hanya admin yang dapat menambah atau mengedit kandidat!');
+            return;
+        }
+        
+        const name = document.getElementById('candidateName').value;
+        const program = document.getElementById('candidateProgram').value;
+        const vision = document.getElementById('candidateVision').value;
+        const mission = document.getElementById('candidateMission').value;
+        
+        if (!name || !program || !vision || !mission) {
+            alert('Silakan isi semua data kandidat!');
+            return;
+        }
+        
+        const candidateData = {
+            name,
+            program,
+            vision,
+            mission,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        // Tambahkan photoUrl jika ada
+        if (currentPhotoUrl) {
+            candidateData.photoUrl = currentPhotoUrl;
+        }
+        
+        if (editingCandidateId) {
+            // Update existing candidate - pertahankan foto lama jika tidak ada foto baru
+            if (!currentPhotoUrl) {
+                // Ambil data kandidat yang ada untuk mempertahankan photoUrl
+                db.collection('candidates').doc(editingCandidateId).get()
+                    .then((doc) => {
+                        if (doc.exists) {
+                            const existingData = doc.data();
+                            candidateData.photoUrl = existingData.photoUrl;
+                        }
+                        // Tambahkan createdAt untuk data yang sudah ada
+                        candidateData.createdAt = existingData.createdAt;
+                        return db.collection('candidates').doc(editingCandidateId).update(candidateData);
+                    })
+                    .then(() => {
+                        handleSaveSuccess();
+                    })
+                    .catch((error) => {
+                        console.error("Error updating candidate: ", error);
+                        alert('Terjadi kesalahan saat memperbarui kandidat');
+                    });
+            } else {
+                // Jika ada foto baru, update termasuk photoUrl
+                db.collection('candidates').doc(editingCandidateId).get()
+                    .then((doc) => {
+                        if (doc.exists) {
+                            const existingData = doc.data();
+                            candidateData.createdAt = existingData.createdAt;
+                        }
+                        return db.collection('candidates').doc(editingCandidateId).update(candidateData);
+                    })
+                    .then(() => {
+                        handleSaveSuccess();
+                    })
+                    .catch((error) => {
+                        console.error("Error updating candidate: ", error);
+                        alert('Terjadi kesalahan saat memperbarui kandidat');
+                    });
+            }
+        } else {
+            // Add new candidate
+            candidateData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+            db.collection('candidates').add(candidateData)
+                .then(() => {
+                    handleSaveSuccess();
+                })
+                .catch((error) => {
+                    console.error("Error adding candidate: ", error);
+                    alert('Terjadi kesalahan saat menambahkan kandidat');
+                });
+        }
+        
+        function handleSaveSuccess() {
+            alert(editingCandidateId ? 'Kandidat berhasil diperbarui' : 'Kandidat berhasil ditambahkan');
+            candidateModal.style.display = 'none';
+            // Reset form
+            document.getElementById('candidateName').value = '';
+            document.getElementById('candidateProgram').value = '';
+            document.getElementById('candidateVision').value = '';
+            document.getElementById('candidateMission').value = '';
+            document.getElementById('photoPreview').innerHTML = '';
+            currentPhotoUrl = '';
+            editingCandidateId = null;
+            // Reload both views
+            loadCandidates();
+            if (isAdmin) {
+                loadAdminCandidates();
+            }
+        }
+    });
+
+    submitVoteBtn.addEventListener('click', () => {
+        if (!selectedCandidate) {
+            alert('Silakan pilih kandidat terlebih dahulu!');
+            return;
+        }
+        
+        const user = auth.currentUser;
+        if (!user) {
+            alert('Anda harus login terlebih dahulu untuk melakukan voting!');
+            window.location.href = 'login.html';
+            return;
+        }
+        
+        // Check if user has already voted
+        db.collection('votes').where('userId', '==', user.uid).get()
+            .then((querySnapshot) => {
+                if (!querySnapshot.empty) {
+                    alert('Anda sudah melakukan voting sebelumnya!');
+                    return;
+                }
+                
+                // Save vote to Firestore
+                return db.collection('votes').add({
+                    candidate: selectedCandidate,
+                    userId: user.uid,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            })
+            .then(() => {
+                alert('Terima kasih! Suara Anda telah tercatat.');
+                // Reset selection
+                document.querySelectorAll('.vote-option').forEach(opt => opt.classList.remove('selected'));
+                selectedCandidate = null;
+            })
+            .catch(error => {
+                console.error('Error saving vote: ', error);
+                alert('Terjadi kesalahan. Silakan coba lagi.');
+            });
+    });
+
+    voteNowBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.getElementById('voteLink').click();
+    });
+
+    // Event listener untuk admin link
+    adminLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        // Sembunyikan semua section
+        document.querySelector('.hero').style.display = 'none';
+        document.querySelector('.candidates').style.display = 'none';
+        document.querySelector('.vote-section').style.display = 'none';
+        
+        // Tampilkan admin section
+        adminSection.style.display = 'block';
+        
+        // Update active nav link
+        updateActiveNavLink('adminLink');
+        
+        // Load candidates untuk admin jika belum diload
+        if (isAdmin) {
+            loadAdminCandidates();
+        }
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    logoutLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        auth.signOut().then(() => {
+            // Sign-out successful.
+            loginLink.style.display = 'block';
+            userInfo.style.display = 'none';
+            logoutLink.style.display = 'none';
+            adminLink.style.display = 'none';
             adminSection.style.display = 'none';
+            isAdmin = false;
+            
+            // Show hidden sections
             document.querySelector('.hero').style.display = 'block';
             document.querySelector('.candidates').style.display = 'grid';
             document.querySelector('.vote-section').style.display = 'block';
@@ -1201,37 +1388,54 @@
             // Update active nav link
             updateActiveNavLink('homeLink');
             
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            alert('Logout berhasil!');
+        }).catch((error) => {
+            console.error('Error signing out:', error);
         });
+    });
 
-        document.getElementById('candidatesLink').addEventListener('click', (e) => {
-            e.preventDefault();
-            adminSection.style.display = 'none';
-            document.querySelector('.hero').style.display = 'block';
-            document.querySelector('.candidates').style.display = 'grid';
-            document.querySelector('.vote-section').style.display = 'block';
-            
-            // Update active nav link
-            updateActiveNavLink('candidatesLink');
-            
-            document.querySelector('.section-title').scrollIntoView({ behavior: 'smooth' });
-        });
+    // Navigation
+    document.getElementById('homeLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        adminSection.style.display = 'none';
+        document.querySelector('.hero').style.display = 'block';
+        document.querySelector('.candidates').style.display = 'grid';
+        document.querySelector('.vote-section').style.display = 'block';
+        
+        // Update active nav link
+        updateActiveNavLink('homeLink');
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
 
-        document.getElementById('voteLink').addEventListener('click', (e) => {
-            e.preventDefault();
-            adminSection.style.display = 'none';
-            document.querySelector('.hero').style.display = 'block';
-            document.querySelector('.candidates').style.display = 'grid';
-            document.querySelector('.vote-section').style.display = 'block';
-            
-            // Update active nav link
-            updateActiveNavLink('voteLink');
-            
-            document.getElementById('submitVote').scrollIntoView({ behavior: 'smooth' });
-        });
+    document.getElementById('candidatesLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        adminSection.style.display = 'none';
+        document.querySelector('.hero').style.display = 'block';
+        document.querySelector('.candidates').style.display = 'grid';
+        document.querySelector('.vote-section').style.display = 'block';
+        
+        // Update active nav link
+        updateActiveNavLink('candidatesLink');
+        
+        document.querySelector('.section-title').scrollIntoView({ behavior: 'smooth' });
+    });
 
-        // Check authentication state on page load
-        document.addEventListener('DOMContentLoaded', checkAuthState);
-    </script>
+    document.getElementById('voteLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        adminSection.style.display = 'none';
+        document.querySelector('.hero').style.display = 'block';
+        document.querySelector('.candidates').style.display = 'grid';
+        document.querySelector('.vote-section').style.display = 'block';
+        
+        // Update active nav link
+        updateActiveNavLink('voteLink');
+        
+        document.getElementById('submitVote').scrollIntoView({ behavior: 'smooth' });
+    });
+
+    // Check authentication state on page load
+    document.addEventListener('DOMContentLoaded', checkAuthState);
+</script>
 </body>
 </html>
