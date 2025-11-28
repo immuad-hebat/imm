@@ -9,7 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
-   <style>
+ <style>
     * {
         margin: 0;
         padding: 0;
@@ -24,6 +24,8 @@
         --cream: #f5f5dc;
         --gold: #daa520;
         --light-gold: #f0d483;
+        --success: #28a745;
+        --danger: #dc3545;
     }
 
     body {
@@ -195,7 +197,7 @@
     }
 
     .btn-danger {
-        background: #dc3545;
+        background: var(--danger);
     }
 
     .btn-danger:hover {
@@ -284,6 +286,7 @@
         background: #fff9e6;
         border-radius: 5px;
         border-left: 4px solid var(--gold);
+        font-weight: 500;
     }
 
     .vote-options {
@@ -308,12 +311,14 @@
     .vote-option:hover {
         border-color: var(--maroon);
         transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(128, 0, 0, 0.1);
     }
 
     .vote-option.selected {
         border-color: var(--maroon);
         background: rgba(128, 0, 0, 0.08);
-        box-shadow: 0 4px 8px rgba(128, 0, 0, 0.2);
+        box-shadow: 0 4px 12px rgba(128, 0, 0, 0.2);
+        transform: translateY(-2px);
     }
 
     .vote-option.selected::after {
@@ -323,24 +328,28 @@
         right: 8px;
         background: var(--maroon);
         color: white;
-        width: 20px;
-        height: 20px;
+        width: 24px;
+        height: 24px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 0.8rem;
         font-weight: bold;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
 
-    .vote-option.disabled {
-        opacity: 0.6;
+    /* NEW: Vote option ketika mencapai batas maksimal */
+    .vote-option.max-reached:not(.selected) {
+        opacity: 0.5;
         cursor: not-allowed;
+        background: #f8f9fa;
     }
 
-    .vote-option.disabled:hover {
+    .vote-option.max-reached:not(.selected):hover {
         border-color: #ddd;
         transform: none;
+        box-shadow: none;
     }
 
     .vote-option-img {
@@ -354,6 +363,12 @@
         align-items: center;
         justify-content: center;
         border: 2px solid var(--maroon);
+        transition: all 0.3s;
+    }
+
+    .vote-option.selected .vote-option-img {
+        border-color: var(--dark-maroon);
+        box-shadow: 0 0 0 2px var(--maroon);
     }
 
     .vote-option-img img {
@@ -362,38 +377,91 @@
         object-fit: cover;
     }
 
-    /* Selection Counter - NEW */
-    .selection-counter {
-        margin: 1rem 0;
-        padding: 1rem;
+    /* Selection Counter & Validation - NEW */
+    .selection-info {
+        margin: 1.5rem 0;
+        padding: 1.2rem;
         background: #f8f9fa;
-        border-radius: 5px;
-        text-align: center;
+        border-radius: 8px;
         border-left: 4px solid var(--maroon);
+    }
+
+    .selection-counter {
+        text-align: center;
+        margin-bottom: 0.5rem;
     }
 
     .selection-counter p {
         margin: 0;
-        font-weight: 500;
+        font-weight: 600;
+        font-size: 1.1rem;
     }
 
     #selectedCount {
         color: var(--maroon);
         font-weight: bold;
-        font-size: 1.1em;
+        font-size: 1.3em;
     }
 
-    /* Tombol Submit disabled - NEW */
+    /* Validation Message Styles - NEW */
+    #validationMessage {
+        text-align: center;
+        font-weight: 500;
+        min-height: 24px;
+        padding: 0.3rem 0;
+        transition: all 0.3s ease;
+    }
+
+    #validationMessage.valid {
+        color: var(--success);
+    }
+
+    #validationMessage.valid::before {
+        content: '✓ ';
+        font-weight: bold;
+    }
+
+    #validationMessage.invalid {
+        color: var(--danger);
+    }
+
+    #validationMessage.invalid::before {
+        content: '⚠ ';
+        font-weight: bold;
+    }
+
+    /* Tombol Submit Styles - IMPROVED */
+    #submitVote {
+        width: 100%;
+        margin-top: 1rem;
+        font-size: 1.1rem;
+        padding: 15px 30px;
+        transition: all 0.3s ease;
+    }
+
+    #submitVote:not(:disabled) {
+        background: var(--gold);
+        cursor: pointer;
+    }
+
+    #submitVote:not(:disabled):hover {
+        background: #b8860b;
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
     #submitVote:disabled {
-        background: #cccccc;
-        cursor: not-allowed;
-        transform: none;
+        background: #cccccc !important;
+        cursor: not-allowed !important;
+        transform: none !important;
+        box-shadow: none !important;
+        opacity: 0.7;
     }
 
     #submitVote:disabled:hover {
-        background: #cccccc;
-        transform: none;
-        box-shadow: none;
+        background: #cccccc !important;
+        transform: none !important;
+        box-shadow: none !important;
     }
 
     /* Admin Dashboard */
@@ -493,6 +561,13 @@
         border: 1px solid #ddd;
         border-radius: 5px;
         font-size: 1rem;
+        transition: border-color 0.3s;
+    }
+
+    .form-group input:focus, .form-group textarea:focus {
+        outline: none;
+        border-color: var(--maroon);
+        box-shadow: 0 0 0 2px rgba(128, 0, 0, 0.1);
     }
 
     .form-group textarea {
@@ -522,6 +597,11 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        transition: background 0.3s;
+    }
+
+    .close:hover {
+        background: rgba(0, 0, 0, 0.5);
     }
 
     /* CSS untuk foto */
@@ -532,6 +612,7 @@
         margin: 10px auto;
         display: block;
         border: 2px solid var(--maroon);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
     }
 
     /* Footer */
@@ -563,9 +644,11 @@
     .footer-links a {
         color: white;
         text-decoration: none;
+        transition: color 0.3s;
     }
 
     .footer-links a:hover {
+        color: var(--light-gold);
         text-decoration: underline;
     }
 
@@ -630,7 +713,16 @@
 
         /* Vote options responsive */
         .vote-option {
-            min-width: 150px;
+            min-width: calc(50% - 0.5rem);
+        }
+
+        .vote-options {
+            gap: 0.8rem;
+        }
+
+        /* Selection info responsive */
+        .selection-info {
+            padding: 1rem;
         }
 
         /* Modal improvements untuk mobile */
@@ -685,6 +777,30 @@
         .vote-option {
             min-width: 100%;
         }
+
+        .selection-counter p {
+            font-size: 1rem;
+        }
+
+        #validationMessage {
+            font-size: 0.9rem;
+        }
+
+        #submitVote {
+            padding: 12px 20px;
+            font-size: 1rem;
+        }
+    }
+
+    /* Animation untuk feedback */
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+
+    .vote-option.selected {
+        animation: pulse 0.3s ease;
     }
 </style>
 </head>
