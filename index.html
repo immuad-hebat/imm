@@ -742,22 +742,23 @@
     </section>
 
     <!-- Vote Section -->
-<section class="container">
-    <h2 class="section-title">Pilih Calon Formatur IMM JPMIPA 2025</h2>
-    <div class="vote-section">
-        <p>Silakan pilih <strong>maksimal 13 calon</strong> Formatur IMM JPMIPA di bawah ini. Pastikan pilihan Anda sudah tepat sebelum mengirimkan suara.</p>
-        
-        <div class="vote-options" id="voteOptionsContainer">
-            <!-- Opsi voting akan dimuat secara dinamis -->
+    <section class="container">
+        <h2 class="section-title">Pilih Calon Formatur IMM JPMIPA 2025</h2>
+        <div class="vote-section">
+            <p>Silakan pilih <strong>minimal 1 dan maksimal 13 calon</strong> Formatur IMM JPMIPA di bawah ini. Pastikan pilihan Anda sudah tepat sebelum mengirimkan suara.</p>
+            
+            <div class="vote-options" id="voteOptionsContainer">
+                <!-- Opsi voting akan dimuat secara dinamis -->
+            </div>
+            
+            <div style="margin: 1rem 0; padding: 1rem; background: #f8f9fa; border-radius: 5px;">
+                <p><strong>Pilihan Anda:</strong> <span id="selectedCount">0</span>/13 kandidat terpilih</p>
+                <p id="validationMessage" style="color: var(--maroon); font-size: 0.9rem; margin-top: 5px;"></p>
+            </div>
+            
+            <button class="btn" id="submitVote" style="width: 100%;" disabled>Kirim Suara Saya</button>
         </div>
-        
-        <div style="margin: 1rem 0; padding: 1rem; background: #f8f9fa; border-radius: 5px;">
-            <p><strong>Pilihan Anda:</strong> <span id="selectedCount">0</span>/13 kandidat terpilih</p>
-        </div>
-        
-        <button class="btn" id="submitVote" style="width: 100%;">Kirim Suara Saya</button>
-    </div>
-</section>
+    </section>
 
     <!-- Admin Dashboard -->
     <section class="container">
@@ -842,7 +843,7 @@
         </div>
     </footer>
 
-  <script>
+<script>
     // Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyDhJj0hNeDIsD3jxnOPxHWyvvfXwNUxE8I",
@@ -889,13 +890,13 @@
     const adminCandidatesList = document.getElementById('adminCandidatesList');
     const resultsContainer = document.getElementById('resultsContainer');
 
-    // State variables - MODIFIED untuk multiple selection
+    // State variables - MODIFIED untuk minimal dan maksimal 13
     let selectedCandidates = []; // Array untuk menyimpan multiple selections
     let isAdmin = false;
     let editingCandidateId = null;
     let currentPhotoUrl = '';
     let uploadWidget = null;
-    const MAX_SELECTIONS = 13; // Batas maksimal pilihan
+    const REQUIRED_SELECTIONS = 13; // Harus memilih tepat 13 kandidat
 
     // Mobile menu toggle
     mobileMenuBtn.addEventListener('click', () => {
@@ -937,6 +938,8 @@
                 adminLink.style.display = 'none';
                 adminSection.style.display = 'none';
                 isAdmin = false;
+                // Reset pilihan voting
+                resetVoteSelection();
             }
         });
         
@@ -945,6 +948,7 @@
         // Initialize counter dan tombol submit
         updateSelectedCounter();
         updateSubmitButton();
+        updateVoteOptionsState();
     }
 
     // Get user data from Firestore
@@ -1125,7 +1129,7 @@
         candidatesContainer.appendChild(candidateCard);
     }
 
-    // Render vote option - MODIFIED untuk multiple selection
+    // Render vote option - MODIFIED untuk tepat 13 pilihan
     function renderVoteOption(candidate) {
         const voteOption = document.createElement('div');
         voteOption.className = 'vote-option';
@@ -1153,8 +1157,8 @@
                 voteOption.classList.remove('selected');
             } else {
                 // Cek apakah sudah mencapai batas maksimal
-                if (selectedCandidates.length >= MAX_SELECTIONS) {
-                    alert(`Anda hanya dapat memilih maksimal ${MAX_SELECTIONS} kandidat.`);
+                if (selectedCandidates.length >= REQUIRED_SELECTIONS) {
+                    alert(`Anda harus memilih tepat ${REQUIRED_SELECTIONS} kandidat. Silakan batalkan pilihan salah satu kandidat terlebih dahulu.`);
                     return;
                 }
                 
@@ -1163,11 +1167,10 @@
                 voteOption.classList.add('selected');
             }
             
-            // Update counter
+            // Update semua state
             updateSelectedCounter();
-            
-            // Update status tombol submit
             updateSubmitButton();
+            updateVoteOptionsState();
         });
         
         voteOptionsContainer.appendChild(voteOption);
@@ -1176,21 +1179,61 @@
     // Fungsi untuk update counter pilihan
     function updateSelectedCounter() {
         const selectedCountElement = document.getElementById('selectedCount');
+        const validationMessage = document.getElementById('validationMessage');
+        
         if (selectedCountElement) {
             selectedCountElement.textContent = selectedCandidates.length;
+        }
+        
+        // Update validation message
+        if (validationMessage) {
+            if (selectedCandidates.length < REQUIRED_SELECTIONS) {
+                const remaining = REQUIRED_SELECTIONS - selectedCandidates.length;
+                validationMessage.textContent = `Pilih ${remaining} kandidat lagi untuk mencapai ${REQUIRED_SELECTIONS} kandidat`;
+                validationMessage.className = 'invalid';
+            } else if (selectedCandidates.length === REQUIRED_SELECTIONS) {
+                validationMessage.textContent = '✓ Anda telah memilih tepat 13 kandidat. Silakan kirim suara.';
+                validationMessage.className = 'valid';
+            } else {
+                validationMessage.textContent = `Anda harus memilih tepat ${REQUIRED_SELECTIONS} kandidat`;
+                validationMessage.className = 'invalid';
+            }
         }
     }
 
     // Fungsi untuk update status tombol submit
     function updateSubmitButton() {
         const submitBtn = document.getElementById('submitVote');
-        if (selectedCandidates.length > 0) {
+        const isValid = selectedCandidates.length === REQUIRED_SELECTIONS;
+        
+        if (isValid) {
             submitBtn.disabled = false;
             submitBtn.style.opacity = '1';
+            submitBtn.style.cursor = 'pointer';
+            submitBtn.style.background = 'var(--gold)';
         } else {
             submitBtn.disabled = true;
             submitBtn.style.opacity = '0.6';
+            submitBtn.style.cursor = 'not-allowed';
+            submitBtn.style.background = '#cccccc';
         }
+    }
+
+    // Fungsi untuk update state vote options
+    function updateVoteOptionsState() {
+        const voteOptions = document.querySelectorAll('.vote-option');
+        const hasReachedMax = selectedCandidates.length >= REQUIRED_SELECTIONS;
+        
+        voteOptions.forEach(option => {
+            const candidateId = option.getAttribute('data-candidate');
+            const isSelected = selectedCandidates.includes(candidateId);
+            
+            if (hasReachedMax && !isSelected) {
+                option.classList.add('max-reached');
+            } else {
+                option.classList.remove('max-reached');
+            }
+        });
     }
 
     // Render admin candidate card
@@ -1491,10 +1534,11 @@
         }
     });
 
-    // Event listener untuk submit vote - MODIFIED untuk multiple selection
+    // Event listener untuk submit vote - MODIFIED untuk tepat 13 pilihan
     submitVoteBtn.addEventListener('click', () => {
-        if (selectedCandidates.length === 0) {
-            alert('Silakan pilih setidaknya satu kandidat!');
+        // Validasi final sebelum submit
+        if (selectedCandidates.length !== REQUIRED_SELECTIONS) {
+            alert(`Anda harus memilih tepat ${REQUIRED_SELECTIONS} kandidat! Saat ini Anda memilih ${selectedCandidates.length} kandidat.`);
             return;
         }
         
@@ -1502,6 +1546,12 @@
         if (!user) {
             alert('Anda harus login terlebih dahulu untuk melakukan voting!');
             window.location.href = 'login.html';
+            return;
+        }
+        
+        // Konfirmasi sebelum submit
+        const confirmation = confirm(`Anda akan mengirimkan suara untuk ${selectedCandidates.length} kandidat. Apakah Anda yakin dengan pilihan Anda?`);
+        if (!confirmation) {
             return;
         }
         
@@ -1535,13 +1585,19 @@
             });
     });
 
-    // Fungsi untuk reset pilihan voting
+    // Fungsi untuk reset pilihan voting - MODIFIED
     function resetVoteSelection() {
         // Reset UI
-        document.querySelectorAll('.vote-option').forEach(opt => opt.classList.remove('selected'));
+        document.querySelectorAll('.vote-option').forEach(opt => {
+            opt.classList.remove('selected');
+            opt.classList.remove('max-reached');
+        });
         selectedCandidates = [];
+        
+        // Update semua state
         updateSelectedCounter();
         updateSubmitButton();
+        updateVoteOptionsState();
     }
 
     voteNowBtn.addEventListener('click', (e) => {
@@ -1589,6 +1645,9 @@
             
             // Update active nav link
             updateActiveNavLink('homeLink');
+            
+            // Reset pilihan voting
+            resetVoteSelection();
             
             alert('Logout berhasil!');
         }).catch((error) => {
