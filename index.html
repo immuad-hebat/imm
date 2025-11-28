@@ -9,7 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
-    <style>
+   <style>
     * {
         margin: 0;
         padding: 0;
@@ -269,13 +269,21 @@
         color: #666;
     }
 
-    /* Vote Section */
+    /* Vote Section - MODIFIED untuk multiple selection */
     .vote-section {
         background: white;
         border-radius: 10px;
         padding: 2rem;
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         margin-bottom: 3rem;
+    }
+
+    .vote-section p:first-of-type {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: #fff9e6;
+        border-radius: 5px;
+        border-left: 4px solid var(--gold);
     }
 
     .vote-options {
@@ -294,15 +302,45 @@
         border-radius: 8px;
         cursor: pointer;
         transition: all 0.3s;
+        position: relative;
     }
 
     .vote-option:hover {
         border-color: var(--maroon);
+        transform: translateY(-2px);
     }
 
     .vote-option.selected {
         border-color: var(--maroon);
-        background: rgba(128, 0, 0, 0.05);
+        background: rgba(128, 0, 0, 0.08);
+        box-shadow: 0 4px 8px rgba(128, 0, 0, 0.2);
+    }
+
+    .vote-option.selected::after {
+        content: '✓';
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: var(--maroon);
+        color: white;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+
+    .vote-option.disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .vote-option.disabled:hover {
+        border-color: #ddd;
+        transform: none;
     }
 
     .vote-option-img {
@@ -322,6 +360,40 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
+    }
+
+    /* Selection Counter - NEW */
+    .selection-counter {
+        margin: 1rem 0;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 5px;
+        text-align: center;
+        border-left: 4px solid var(--maroon);
+    }
+
+    .selection-counter p {
+        margin: 0;
+        font-weight: 500;
+    }
+
+    #selectedCount {
+        color: var(--maroon);
+        font-weight: bold;
+        font-size: 1.1em;
+    }
+
+    /* Tombol Submit disabled - NEW */
+    #submitVote:disabled {
+        background: #cccccc;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    #submitVote:disabled:hover {
+        background: #cccccc;
+        transform: none;
+        box-shadow: none;
     }
 
     /* Admin Dashboard */
@@ -556,6 +628,11 @@
             gap: 1rem;
         }
 
+        /* Vote options responsive */
+        .vote-option {
+            min-width: 150px;
+        }
+
         /* Modal improvements untuk mobile */
         .modal {
             padding: 10px 0;
@@ -603,6 +680,10 @@
         .photo-preview {
             max-width: 120px;
             max-height: 120px;
+        }
+
+        .vote-option {
+            min-width: 100%;
         }
     }
 </style>
@@ -661,18 +742,22 @@
     </section>
 
     <!-- Vote Section -->
-    <section class="container">
-        <h2 class="section-title">Pilih Calon Formatur IMM JPMIPA 2025</h2>
-        <div class="vote-section">
-            <p>Silakan pilih salah satu calon Formatur IMM JPMIPA di bawah ini. Pastikan pilihan Anda sudah tepat sebelum mengirimkan suara.</p>
-            
-            <div class="vote-options" id="voteOptionsContainer">
-                <!-- Opsi voting akan dimuat secara dinamis -->
-            </div>
-            
-            <button class="btn" id="submitVote" style="width: 100%;">Kirim Suara Saya</button>
+<section class="container">
+    <h2 class="section-title">Pilih Calon Formatur IMM JPMIPA 2025</h2>
+    <div class="vote-section">
+        <p>Silakan pilih <strong>maksimal 13 calon</strong> Formatur IMM JPMIPA di bawah ini. Pastikan pilihan Anda sudah tepat sebelum mengirimkan suara.</p>
+        
+        <div class="vote-options" id="voteOptionsContainer">
+            <!-- Opsi voting akan dimuat secara dinamis -->
         </div>
-    </section>
+        
+        <div style="margin: 1rem 0; padding: 1rem; background: #f8f9fa; border-radius: 5px;">
+            <p><strong>Pilihan Anda:</strong> <span id="selectedCount">0</span>/13 kandidat terpilih</p>
+        </div>
+        
+        <button class="btn" id="submitVote" style="width: 100%;">Kirim Suara Saya</button>
+    </div>
+</section>
 
     <!-- Admin Dashboard -->
     <section class="container">
@@ -757,7 +842,7 @@
         </div>
     </footer>
 
-   <script>
+  <script>
     // Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyDhJj0hNeDIsD3jxnOPxHWyvvfXwNUxE8I",
@@ -777,7 +862,7 @@
     // Cloudinary Configuration
     const cloudinaryConfig = {
         cloudName: 'dgysqnzx2',
-        uploadPreset: 'imm_preset' // Pastikan Anda sudah buat preset di Cloudinary dashboard
+        uploadPreset: 'imm_preset'
     };
 
     // DOM Elements
@@ -804,12 +889,13 @@
     const adminCandidatesList = document.getElementById('adminCandidatesList');
     const resultsContainer = document.getElementById('resultsContainer');
 
-    // State variables
-    let selectedCandidate = null;
+    // State variables - MODIFIED untuk multiple selection
+    let selectedCandidates = []; // Array untuk menyimpan multiple selections
     let isAdmin = false;
     let editingCandidateId = null;
     let currentPhotoUrl = '';
     let uploadWidget = null;
+    const MAX_SELECTIONS = 13; // Batas maksimal pilihan
 
     // Mobile menu toggle
     mobileMenuBtn.addEventListener('click', () => {
@@ -855,6 +941,10 @@
         });
         
         loadCandidates();
+        
+        // Initialize counter dan tombol submit
+        updateSelectedCounter();
+        updateSubmitButton();
     }
 
     // Get user data from Firestore
@@ -1009,7 +1099,7 @@
         });
     }
 
-    // Render candidate card for public view - MODIFIED
+    // Render candidate card for public view
     function renderCandidateCard(candidate) {
         const missionItems = candidate.mission.split('\n').map(item => 
             `<li>${item}</li>`
@@ -1035,7 +1125,7 @@
         candidatesContainer.appendChild(candidateCard);
     }
 
-    // Render vote option - MODIFIED
+    // Render vote option - MODIFIED untuk multiple selection
     function renderVoteOption(candidate) {
         const voteOption = document.createElement('div');
         voteOption.className = 'vote-option';
@@ -1052,20 +1142,58 @@
         `;
         
         voteOption.addEventListener('click', () => {
-            // Remove selected class from all options
-            document.querySelectorAll('.vote-option').forEach(opt => opt.classList.remove('selected'));
+            const candidateId = candidate.id;
             
-            // Add selected class to clicked option
-            voteOption.classList.add('selected');
+            // Cek apakah kandidat sudah dipilih
+            const isSelected = selectedCandidates.includes(candidateId);
             
-            // Set selected candidate
-            selectedCandidate = candidate.id;
+            if (isSelected) {
+                // Hapus dari selection
+                selectedCandidates = selectedCandidates.filter(id => id !== candidateId);
+                voteOption.classList.remove('selected');
+            } else {
+                // Cek apakah sudah mencapai batas maksimal
+                if (selectedCandidates.length >= MAX_SELECTIONS) {
+                    alert(`Anda hanya dapat memilih maksimal ${MAX_SELECTIONS} kandidat.`);
+                    return;
+                }
+                
+                // Tambahkan ke selection
+                selectedCandidates.push(candidateId);
+                voteOption.classList.add('selected');
+            }
+            
+            // Update counter
+            updateSelectedCounter();
+            
+            // Update status tombol submit
+            updateSubmitButton();
         });
         
         voteOptionsContainer.appendChild(voteOption);
     }
 
-    // Render admin candidate card - MODIFIED
+    // Fungsi untuk update counter pilihan
+    function updateSelectedCounter() {
+        const selectedCountElement = document.getElementById('selectedCount');
+        if (selectedCountElement) {
+            selectedCountElement.textContent = selectedCandidates.length;
+        }
+    }
+
+    // Fungsi untuk update status tombol submit
+    function updateSubmitButton() {
+        const submitBtn = document.getElementById('submitVote');
+        if (selectedCandidates.length > 0) {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+        } else {
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.6';
+        }
+    }
+
+    // Render admin candidate card
     function renderAdminCandidateCard(candidate) {
         const adminCard = document.createElement('div');
         adminCard.className = 'admin-candidate-card';
@@ -1099,7 +1227,7 @@
         });
     }
 
-    // Edit candidate - MODIFIED
+    // Edit candidate
     function editCandidate(candidate) {
         editingCandidateId = candidate.id;
         currentPhotoUrl = candidate.photoUrl || '';
@@ -1139,7 +1267,7 @@
         }
     }
 
-    // Show voting results
+    // Show voting results - MODIFIED untuk multiple votes
     function showResults() {
         resultsContainer.innerHTML = '<p>Memuat hasil...</p>';
         resultsModal.style.display = 'flex';
@@ -1160,7 +1288,7 @@
                             };
                         });
                         
-                        // Count votes
+                        // Count votes (setiap vote dihitung satu)
                         querySnapshot.forEach((doc) => {
                             const vote = doc.data();
                             if (votes[vote.candidate]) {
@@ -1169,11 +1297,24 @@
                             }
                         });
                         
-                        // Display results
-                        let resultsHTML = `<p><strong>Total Suara: ${totalVotes}</strong></p>`;
+                        // Calculate unique voters
+                        const uniqueVoters = new Set();
+                        querySnapshot.forEach(doc => {
+                            uniqueVoters.add(doc.data().userId);
+                        });
                         
-                        Object.keys(votes).forEach(candidateId => {
-                            const candidate = votes[candidateId];
+                        // Display results
+                        let resultsHTML = `
+                            <p><strong>Total Pemilih: ${uniqueVoters.size}</strong></p>
+                            <p><strong>Total Suara: ${totalVotes}</strong></p>
+                        `;
+                        
+                        // Urutkan berdasarkan jumlah suara terbanyak
+                        const sortedCandidates = Object.keys(votes)
+                            .map(id => ({ id, ...votes[id] }))
+                            .sort((a, b) => b.count - a.count);
+                        
+                        sortedCandidates.forEach(candidate => {
                             const percentage = totalVotes > 0 ? 
                                 ((candidate.count / totalVotes) * 100).toFixed(2) : 0;
                             
@@ -1350,9 +1491,10 @@
         }
     });
 
+    // Event listener untuk submit vote - MODIFIED untuk multiple selection
     submitVoteBtn.addEventListener('click', () => {
-        if (!selectedCandidate) {
-            alert('Silakan pilih kandidat terlebih dahulu!');
+        if (selectedCandidates.length === 0) {
+            alert('Silakan pilih setidaknya satu kandidat!');
             return;
         }
         
@@ -1371,24 +1513,36 @@
                     return;
                 }
                 
-                // Save vote to Firestore
-                return db.collection('votes').add({
-                    candidate: selectedCandidate,
-                    userId: user.uid,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                // Save multiple votes to Firestore
+                const votePromises = selectedCandidates.map(candidateId => {
+                    return db.collection('votes').add({
+                        candidate: candidateId,
+                        userId: user.uid,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
                 });
+                
+                return Promise.all(votePromises);
             })
             .then(() => {
-                alert('Terima kasih! Suara Anda telah tercatat.');
+                alert(`Terima kasih! ${selectedCandidates.length} suara Anda telah tercatat.`);
                 // Reset selection
-                document.querySelectorAll('.vote-option').forEach(opt => opt.classList.remove('selected'));
-                selectedCandidate = null;
+                resetVoteSelection();
             })
             .catch(error => {
-                console.error('Error saving vote: ', error);
+                console.error('Error saving votes: ', error);
                 alert('Terjadi kesalahan. Silakan coba lagi.');
             });
     });
+
+    // Fungsi untuk reset pilihan voting
+    function resetVoteSelection() {
+        // Reset UI
+        document.querySelectorAll('.vote-option').forEach(opt => opt.classList.remove('selected'));
+        selectedCandidates = [];
+        updateSelectedCounter();
+        updateSubmitButton();
+    }
 
     voteNowBtn.addEventListener('click', (e) => {
         e.preventDefault();
